@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" ng-app="" ng-csp="">
+<head>
+  <meta charset="utf-8">
+  <style>
+    [ng-cloak] {
+      display: none;
+    }
+  </style>
+  <script src="js/init.js"></script>
+  <title>Ninjam JS: Music Collaboration in the Browser</title>
+  <link rel="stylesheet" href="lib/bootstrap/bootstrap.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body ng-cloak>
+
+  <div class="navbar">
+    <div class="navbar-inner">
+      <a class="brand" href="#">Ninjam JS</a>
+      <ul class="nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">Link</a></li>
+        <li><a href="#">Link</a></li>
+      </ul>
+      <div class="btn-group pull-right">
+        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+          Settings
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          <!-- dropdown menu links -->
+          <li>Dropdown stuff</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <ul class="menu">
+    <li><a href="#/view1">view1</a></li>
+    <li><a href="#/view2">view2</a></li>
+  </ul>
+
+  <div ng-view></div>
+</body>
+</html>

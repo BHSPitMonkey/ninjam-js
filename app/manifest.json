@@ -1,0 +1,21 @@
+{
+  "name": "Ninjam JS",
+  "description": "A Ninjam client written in JavaScript.",
+  "version": "0.1",
+  "manifest_version": 2,
+  "app": {
+    "background": {
+      "scripts": ["background.js"]
+    }
+  },
+  "icons": {
+    "16": "img/icon-16.png",
+    "128": "img/icon-128.png"
+  },
+  "permissions": [
+    {"socket": [
+      "tcp-connect"
+    ]},
+    "notifications"
+  ]
+}
