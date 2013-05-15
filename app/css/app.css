@@ -28,3 +28,100 @@
   content: "";
   padding: 0;
 }
+
+
+.navbar {
+  z-index: 5 !important;
+}
+
+.users-pane {
+  background: #ddd;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  top: 42px;
+  right: 300px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 10px;
+  z-index: 0;
+}
+
+.users {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  right: 10px;
+}
+
+.user {
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  margin-bottom: 10px;
+  display: block;
+  min-height: 60px;
+}
+
+.user-titlebar {
+  background: #b9b9b9;
+  border-radius: 8px 8px 0 0;
+}
+
+.user-title {
+  color: white;
+  font-weight: bold;
+  text-shadow: -1px 1px 0 black;
+  margin-left: 10px;
+}
+
+.user-ip {
+  color: #999;
+  margin-right: 10px;
+  float: right;
+}
+
+.sidebar {
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  bottom: 0;
+  position: absolute;
+  right: 0;
+  top: 42px;
+  width: 300px;
+  z-index: 1;
+}
+
+.sidebar > h2, .users-pane > h2 {
+  color: #999;
+  margin: 0;
+  font-size: 18px;
+  font-weight: normal;
+  position: absolute;
+  left: 10px;
+  top: 5px;
+  line-height: 100%;
+}
+
+.messages {
+  background: white;
+  position: absolute;
+  bottom: 70px;
+  left: 10px;
+  right: 10px;
+  top: 30px;
+  border: 1px solid #ddd;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar > textarea {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  height: 40px;
+  width: 266px;
+  margin-bottom: 0;
+}
