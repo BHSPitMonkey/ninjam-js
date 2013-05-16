@@ -13,7 +13,7 @@ angular.module('myApp.controllers', []).
     };
     
     $scope.defaultUsername = "NinjamJSUser";
-    $scope.host = "ninbot.com:2049";
+    $scope.host = "ninjamer.com:2051";
     
     $scope.connect = function() {
       console.log("You tried connecting!");
