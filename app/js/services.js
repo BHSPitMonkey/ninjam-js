@@ -9,7 +9,7 @@ angular.module('myApp.services', []).
       this.status = "starting";
       this.host = null;
       this.port = null;
-      this.users = [];
+      this.users = [{name:"Spongebob"},{name:"Patrick"}];
       this.bpm = null;
       this.bpi = null;
       
