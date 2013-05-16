@@ -14,7 +14,7 @@
 </head>
 <body ng-cloak>
 
-  <div class="navbar">
+  <div class="navbar" ng-controller="HeaderPane">
     <div class="navbar-inner">
       <a class="brand" href="#">Ninjam JS</a>
       <ul class="nav">
@@ -30,40 +30,17 @@
           <li><a href="#">Dropdown stuff</a></li>
         </ul>
       </div>
+      <code class="pull-right">{{ninjam.status}}</code>
     </div>
   </div>
   
   <div class="users-pane" ng-controller="UsersPane">
     <h2>Users and Channels</h2>
     <div class="users">
-      <div class="user">
+      <div class="user" ng-repeat="user in ninjam.users">
         <div class="user-titlebar">
           <div class="user-ip">127.0.0.1</div>
-          <div class="user-title">Spongebob</div>
-        </div>
-        <div class="channels">
-          <div class="channel">
-          
-          </div>
-        </div>
-      </div>
-
-      <div class="user">
-        <div class="user-titlebar">
-          <div class="user-ip">127.0.0.1</div>
-          <div class="user-title">Spongebob</div>
-        </div>
-        <div class="channels">
-          <div class="channel">
-          
-          </div>
-        </div>
-      </div>
-
-      <div class="user">
-        <div class="user-titlebar">
-          <div class="user-ip">127.0.0.1</div>
-          <div class="user-title">Spongebob</div>
+          <div class="user-title">{{user.name}}</div>
         </div>
         <div class="channels">
           <div class="channel">
@@ -78,7 +55,26 @@
     <h2>Chat</h2>
     <div class="messages">
     </div>
-    <textarea rows="2"></textarea>
+    <textarea rows="2" disabled></textarea>
+  </div>
+
+  <div ng-controller="ServerBrowser">
+    <div class="modal" modal="visible" close="close()" options="opts">
+      <div class="modal-header">
+        <h4>Connect to a Ninjam Server</h4>
+      </div>
+      <div class="modal-body">
+        <label>Default Username</label>
+        <input type="text" placeholder="e.g. HeroOfGuitars" ng-model="defaultUsername">
+        <label>Server Host</label>
+        <input type="text" placeholder="e.g. ninbot.com:2049" ng-model="host">
+        <br>
+        <button class="btn btn-primary" ng-click="connect()">Connect</button>
+      </div>
+      <!--div class="modal-footer">
+        <button class="btn btn-warning cancel" ng-click="close()">Cancel</button>
+      </div-->
+    </div>
   </div>
 </body>
 </html>
