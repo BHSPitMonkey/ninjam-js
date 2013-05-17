@@ -232,8 +232,34 @@ angular.module('myApp.services', []).
       },
       
       // Send something to server
-      send : function() {
-        
+      submitChatMessage : function(content) {
+        var msg = new MessageBuilder(content.length + 8);
+        msg.appendString('MSG');
+        msg.appendString(content);
+        msg.appendString('');
+        msg.appendString('');
+        msg.appendString('');
+        this._packMessage(0xc0, msg.buf);
+      },
+      
+      submitPrivateMessage : function(recipient, content) {
+        var msg = new MessageBuilder(recipient.length + content.length + 12);
+        msg.appendString('PRIVMSG');
+        msg.appendString(recipient);
+        msg.appendString(content);
+        msg.appendString('');
+        msg.appendString('');
+        this._packMessage(0xc0, msg.buf);
+      },
+      
+      submitTopic : function(content) {
+        var msg = new MessageBuilder(content.length + 10);
+        msg.appendString('TOPIC');
+        msg.appendString(content);
+        msg.appendString('');
+        msg.appendString('');
+        msg.appendString('');
+        this._packMessage(0xc0, msg.buf);
       },
       
       // Called when socket gets created
@@ -494,6 +520,10 @@ angular.module('myApp.services', []).
                 case "USERCOUNT":
                   break;
               }
+              
+              // Inform callback
+              if (this._callbacks.onChatMessage)
+                this._callbacks.onChatMessage(fields);
               break;
 
             case 0xFD:  // Keepalive

@@ -113,6 +113,29 @@
   overflow-y: auto;
 }
 
+.message {
+    font-size: 85%;
+    padding: 2px 6px;
+}
+.message.msg .sender:after {
+    content: ": ";
+}
+.message.msg {
+    color: black;
+}
+.message.part .sender:after,
+.message.join .sender:after {
+    content: " ";
+}
+.message.part {
+    background: #eee;
+    color: #999;
+}
+.message.join {
+    background: #E1F1DC;
+    color: #000;
+}
+
 .sidebar > textarea {
   position: absolute;
   bottom: 10px;
