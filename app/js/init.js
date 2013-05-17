@@ -25,7 +25,8 @@ $script([
   'js/controllers.js',
   'js/filters.js',
   'js/directives.js',
-  'lib/ui-bootstrap/ui-bootstrap-tpls-0.3.0.js'
+  'lib/ui-bootstrap/ui-bootstrap-tpls-0.3.0.js',
+  'lib/sha1.js'
 ], function() {
   // when all is done, execute bootstrap angular application
   angular.bootstrap(document, ['myApp']);

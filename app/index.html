@@ -39,12 +39,16 @@
     <div class="users">
       <div class="user" ng-repeat="user in ninjam.users">
         <div class="user-titlebar">
-          <div class="user-ip">127.0.0.1</div>
+          <div class="user-ip">{{user.ip}}</div>
           <div class="user-title">{{user.name}}</div>
         </div>
         <div class="channels">
-          <div class="channel">
-          
+          <div class="channel" ng-repeat="channel in user.channels">
+            <ul>
+              <li>Channel name: "{{channel.name}}"</li>
+              <li>Channel volume: "{{channel.volume}}"</li>
+              <li>Channel pan: "{{channel.pan}}"</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -53,7 +57,7 @@
   
   <div class="sidebar" ng-controller="ChatPane">
     <h2>Chat</h2>
-    <div class="messages">
+    <div class="messages" id="messages">
     </div>
     <textarea rows="2" disabled></textarea>
   </div>
