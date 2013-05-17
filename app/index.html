@@ -30,7 +30,7 @@
           <li><a href="#">Dropdown stuff</a></li>
         </ul>
       </div>
-      <code class="pull-right">{{ninjam.status}}</code>
+      <!--code class="pull-right">{{ninjam.status}}</code-->
     </div>
   </div>
   
@@ -43,12 +43,12 @@
           <div class="user-title">{{user.name}}</div>
         </div>
         <div class="channels">
-          <div class="channel" ng-repeat="channel in user.channels">
-            <ul>
-              <li>Channel name: "{{channel.name}}"</li>
-              <li>Channel volume: "{{channel.volume}}"</li>
-              <li>Channel pan: "{{channel.pan}}"</li>
-            </ul>
+          <div class="channel user" ng-repeat="channel in user.channels">
+            <div class="user-titlebar">
+              <div class="user-title">{{channel.name}}</div>
+            </div>
+            <p>Volume: "{{channel.volume}}"</p>
+            <p>Pan: "{{channel.pan}}"</p>
           </div>
         </div>
       </div>

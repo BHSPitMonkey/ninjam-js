@@ -68,6 +68,11 @@ angular.module('myApp.services', []).
       hasMoreData : function() {
         return (this._offset < this._data.byteLength);
       },
+      
+      // Returns the number of bytes remaining to be read
+      bytesRemaining : function() {
+        return this._data.byteLength - this._offset;
+      },
 
     });
     
@@ -124,13 +129,18 @@ angular.module('myApp.services', []).
       this.bpi = null;            // Beats per interval (phrase length)
       this.maxChannels = null;    // Max channels per user allowed by server
       this.topic = null;
-      this.autosubscribe = false; // Currently breaks us because we are bad at sockets
+      this.autosubscribe = true; // Currently breaks us because we are bad at sockets
       
       this._socketPoll = null;    // setTimeout handle for continuous socket reads
+      this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
       this._callbacks = {
         onChallenge: null,
         onChatMessage: null
       };
+      this._msgBacklog = null;    // ArrayBuffer of incomplete server message(s)
+      this._audioContext = new webkitAudioContext();
+      this._audioBufferSource = this._audioContext.createBufferSource();
+      console.log(this._audioBufferSource);
       
       // Try to create the socket
       console.log("Trying to create socket...");
@@ -282,11 +292,10 @@ angular.module('myApp.services', []).
         if (result >= 0) {
           // We are connected; Begin polling for new information
           this._socketPoll = $timeout(function poll() {
-            //console.log("Polling for socket reads");
+            if (this._shouldPollSocket)
+              chrome.socket.read(this.socketId, null, this._onDataRead.bind(this));
             
-            chrome.socket.read(this.socketId, null, this._onDataRead.bind(this));
-            
-            this._socketPoll = $timeout(poll.bind(this), 1000);
+            this._socketPoll = $timeout(poll.bind(this), 500);
           }.bind(this), 0);
         }
       },
@@ -302,7 +311,7 @@ angular.module('myApp.services', []).
           //}.bind(this));
           
           // Parse the received data
-          this._parseMessage(readInfo.data);
+          this._parseMessages(readInfo.data);
         }
       },
       
@@ -334,7 +343,26 @@ angular.module('myApp.services', []).
       }, //
       
       // Parses an ArrayBuffer received from a Ninjam server
-      _parseMessage : function(buf) {
+      _parseMessages : function(buf) {
+        this._shouldPollSocket = false;
+        
+        if (this._msgBacklog != null) {
+          //console.log("Fetching backlog (" + this._msgBacklog.byteLength + ")");
+          //console.log("Merging with new buffer (" + buf.byteLength + ")");
+          // Merge backlog and new buffer into single buffer
+          var mergedBuf = new ArrayBuffer(this._msgBacklog.byteLength + buf.byteLength);
+          var mergedView = new Uint8Array(mergedBuf);
+          var backlogView = new Uint8Array(this._msgBacklog);
+          var bufView = new Uint8Array(buf);
+          for (var i=0; i<backlogView.length; i++)
+            mergedView[i] = backlogView[i];
+          for (var i=0; i<bufView.length; i++)
+            mergedView[backlogView.length + i] = bufView[i];
+          buf = mergedBuf;
+          //console.log("Merged buf has " + buf.byteLength + " bytes.");
+          this._msgBacklog = null;
+        }
+        
         var msg = new MessageReader(buf);
         var error = false;
         
@@ -358,186 +386,204 @@ angular.module('myApp.services', []).
           var type = msg.nextUint8();
           var length = msg.nextUint32();
           
-          // React to the type of message we're seeing
-          switch (type) {
-            case 0x00:  // Server Auth Challenge
-              console.log("Received a server auth challenge.");
-              var fields = {
-                challenge: msg.nextString(8),
-                serverCapabilities: msg.nextUint32(),
-                protocolVersion: msg.nextUint32(),
-                licenseAgreement: msg.nextString()
-              };
-              console.log(fields);
-              this.passHash = CryptoJS.SHA1(this.passHash + fields.challenge);  // Pass 2/2
-              
-              // Tell the UI about this challenge
-              this._callbacks.onChallenge(fields);
-              break;
-
-            case 0x01:  // Server Auth Reply
-              console.log("Received a server auth reply.");
-              var fields = {
-                flag: msg.nextUint8(),
-                error: null,
-                maxChannels: null
-              };
-              if (msg.hasMoreData())
-                fields.error = msg.nextString();
-              if (msg.hasMoreData())
-                fields.maxChannels = msg.nextUint8();
-              console.log(fields);
-              
-              // If flag is not set happily, let's disconnect
-              if (fields.flag == 0) {
-                console.log("Server auth failed: " + fields.error + ". Disconnecting.");
-                this.disconnect();
-              }
-              else {
-                this.status = "authenticated";
-              }
-              break;
-            
-            case 0x02:  // Server Config Change Notify
-              console.log("Received a Server Config Change notification.");
-              var fields = {
-                bpm: msg.nextUint16(),
-                bpi: msg.nextUint16()
-              };
-              console.log(fields);
-              
-              // TODO: Notify user interface
-              break;
-            
-            case 0x03:  // Server Userinfo Change Notify
-              console.log("Received a Server Userinfo Change notification.");
-              var startOffset = msg._offset;
-              while (msg._offset - startOffset < length) {
+          // Are there `length` bytes remaining for us to peruse?
+          //console.log("Message has " + msg.bytesRemaining() + " bytes remaining. This payload is " + length + " bytes.");
+          if (msg.bytesRemaining() < length) {
+            // We don't have this entire payload yet. Move to backlog and break.
+            this._msgBacklog = buf.slice(msg._offset - 5);
+            break;
+          }
+          else {
+          
+            // React to the type of message we're seeing
+            switch (type) {
+              case 0x00:  // Server Auth Challenge
+                console.log("Received a server auth challenge.");
                 var fields = {
-                  active: msg.nextUint8(),
-                  channelIndex: msg.nextUint8(),
-                  volume: msg.nextInt16(),
-                  pan: msg.nextInt8(),
-                  flags: msg.nextUint8(),
-                  username: msg.nextString(),
-                  channelName: msg.nextString()
+                  challenge: msg.nextString(8),
+                  serverCapabilities: msg.nextUint32(),
+                  protocolVersion: msg.nextUint32(),
+                  licenseAgreement: msg.nextString()
+                };
+                console.log(fields);
+                this.passHash = CryptoJS.SHA1(this.passHash + fields.challenge);  // Pass 2/2
+                
+                // Tell the UI about this challenge
+                this._callbacks.onChallenge(fields);
+                break;
+
+              case 0x01:  // Server Auth Reply
+                console.log("Received a server auth reply.");
+                var fields = {
+                  flag: msg.nextUint8(),
+                  error: null,
+                  maxChannels: null
+                };
+                if (msg.hasMoreData())
+                  fields.error = msg.nextString();
+                if (msg.hasMoreData())
+                  fields.maxChannels = msg.nextUint8();
+                console.log(fields);
+                
+                // If flag is not set happily, let's disconnect
+                if (fields.flag == 0) {
+                  console.log("Server auth failed: " + fields.error + ". Disconnecting.");
+                  this.disconnect();
+                }
+                else {
+                  this.status = "authenticated";
+                }
+                break;
+              
+              case 0x02:  // Server Config Change Notify
+                console.log("Received a Server Config Change notification.");
+                var fields = {
+                  bpm: msg.nextUint16(),
+                  bpi: msg.nextUint16()
                 };
                 console.log(fields);
                 
-                var pieces = fields.username.split('@', 2);
-                var username = pieces[0];
-                var ip = (pieces.length == 2) ? pieces[1] : "";
+                // TODO: Notify user interface
+                break;
+              
+              case 0x03:  // Server Userinfo Change Notify
+                console.log("Received a Server Userinfo Change notification.");
+                var startOffset = msg._offset;
+                while (msg._offset - startOffset < length) {
+                  var fields = {
+                    active: msg.nextUint8(),
+                    channelIndex: msg.nextUint8(),
+                    volume: msg.nextInt16(),
+                    pan: msg.nextInt8(),
+                    flags: msg.nextUint8(),
+                    username: msg.nextString(),
+                    channelName: msg.nextString()
+                  };
+                  console.log(fields);
+                  
+                  var pieces = fields.username.split('@', 2);
+                  var username = pieces[0];
+                  var ip = (pieces.length == 2) ? pieces[1] : "";
+                  
+                  // If channel is active
+                  if (fields.active == 1) {
+                    if (!this.users[username]) {
+                      this.users[username] = {
+                        name: username,
+                        fullname: fields.username,
+                        ip: ip,
+                        channels: {}
+                      };
+                    }
+                    if (!this.users[username]["channels"][fields.channelIndex]) {
+                      this.users[username]["channels"][fields.channelIndex] = {};
+                      
+                      // Subscribe to this channel, since we just met it
+                      if (this.autosubscribe)
+                        this.setUsermask([fields.username]);
+                    }
+                    this.users[username]["channels"][fields.channelIndex]["volume"] = fields.volume;
+                    this.users[username]["channels"][fields.channelIndex]["pan"] = fields.pan;
+                    this.users[username]["channels"][fields.channelIndex]["name"] = fields.channelName;
+                  }
+                  else {
+                    // This channel is no longer active, so remove it from the store
+                    this.users[username]["channels"].splice(fields.channelIndex);
+                  }
+                }
                 
-                // If channel is active
-                if (fields.active == 1) {
-                  if (!this.users[username]) {
+                // TODO: Notify user interface
+                break;
+              
+              case 0x04:  // Server Download Interval Begin
+                console.log("Received a Server Download Interval Begin notification.");
+                var fields = {
+                  guid: msg.nextArrayBuffer(16),
+                  estimatedSize: msg.nextUint32(),
+                  fourCC: msg.nextArrayBuffer(4),
+                  channelIndex: msg.nextUint8(),
+                  username: msg.nextString()
+                };
+                console.log(fields);
+                
+                // TODO
+                break;
+              
+              case 0x05:  // Server Download Interval Write
+                console.log("Received a Server Download Interval Write notification. Payload size " + length);
+                var fields = {
+                  guid: msg.nextArrayBuffer(16),
+                  flags: msg.nextUint8(),
+                  audioData: msg.nextArrayBuffer(length - 17)
+                };
+                console.log(fields);
+                
+                // TODO
+                this._audioContext.decodeAudioData(fields.audioData, function(buffer) {
+                  this._audioBufferSource.buffer = buffer;
+                  this._audioBufferSource.connect(this._audioContext.destination);
+                  this._audioBufferSource.start(0);
+                }.bind(this));
+                
+                break;
+              
+              case 0xc0:  // Chat Message
+                console.log("Received a Chat Message.");
+                var fields = {
+                  command: msg.nextString(),
+                  arg1: msg.nextString(),
+                  arg2: msg.nextString(),
+                  arg3: msg.nextString(),
+                  arg4: msg.nextString()
+                };
+                console.log(fields);
+                
+                switch (fields.command) {
+                  case "MSG":
+                    break;
+                  case "PRIVMSG":
+                    break;
+                  case "TOPIC":
+                    this.topic = fields.arg2;
+                    break;
+                  case "JOIN":
+                    var pieces = fields.arg1.split('@', 2);
+                    var username = pieces[0];
+                    var ip = (pieces.length == 2) ? pieces[1] : "";
                     this.users[username] = {
                       name: username,
-                      fullname: fields.username,
+                      fullname: fields.arg1,
                       ip: ip,
                       channels: {}
                     };
-                  }
-                  if (!this.users[username]["channels"][fields.channelIndex]) {
-                    this.users[username]["channels"][fields.channelIndex] = {};
-                    
-                    // Subscribe to this channel, since we just met it
-                    if (this.autosubscribe)
-                      this.setUsermask([fields.username]);
-                  }
-                  this.users[username]["channels"][fields.channelIndex]["volume"] = fields.volume;
-                  this.users[username]["channels"][fields.channelIndex]["pan"] = fields.pan;
-                  this.users[username]["channels"][fields.channelIndex]["name"] = fields.channelName;
+                    break;
+                  case "PART":
+                    delete this.users[fields.arg1.split('@')[0]];
+                    break;
+                  case "USERCOUNT":
+                    break;
                 }
-                else {
-                  // This channel is no longer active, so remove it from the store
-                  this.users[username]["channels"].splice(fields.channelIndex);
-                }
-              }
-              
-              // TODO: Notify user interface
-              break;
-            
-            case 0x04:  // Server Download Interval Begin
-              console.log("Received a Server Download Interval Begin notification.");
-              var fields = {
-                guid: msg.nextArrayBuffer(16),
-                estimatedSize: msg.nextUint32(),
-                fourCC: msg.nextArrayBuffer(4),
-                channelIndex: msg.nextUint8(),
-                username: msg.nextString()
-              };
-              console.log(fields);
-              
-              // TODO
-              break;
-            
-            case 0x05:  // Server Download Interval Write
-              console.log("Received a Server Download Interval Write notification. Payload size " + length);
-              var fields = {
-                guid: msg.nextArrayBuffer(16),
-                flags: msg.nextUint8(),
-                audioData: msg.nextArrayBuffer(length - 17)
-              };
-              console.log(fields);
-              
-              // TODO
-              break;
-            
-            case 0xc0:  // Chat Message
-              console.log("Received a Chat Message.");
-              var fields = {
-                command: msg.nextString(),
-                arg1: msg.nextString(),
-                arg2: msg.nextString(),
-                arg3: msg.nextString(),
-                arg4: msg.nextString()
-              };
-              console.log(fields);
-              
-              switch (fields.command) {
-                case "MSG":
-                  break;
-                case "PRIVMSG":
-                  break;
-                case "TOPIC":
-                  this.topic = fields.arg2;
-                  break;
-                case "JOIN":
-                  var pieces = fields.arg1.split('@', 2);
-                  var username = pieces[0];
-                  var ip = (pieces.length == 2) ? pieces[1] : "";
-                  this.users[username] = {
-                    name: username,
-                    fullname: fields.arg1,
-                    ip: ip,
-                    channels: {}
-                  };
-                  break;
-                case "PART":
-                  delete this.users[fields.arg1.split('@')[0]];
-                  break;
-                case "USERCOUNT":
-                  break;
-              }
-              
-              // Inform callback
-              if (this._callbacks.onChatMessage)
-                this._callbacks.onChatMessage(fields);
-              break;
+                
+                // Inform callback
+                if (this._callbacks.onChatMessage)
+                  this._callbacks.onChatMessage(fields);
+                break;
 
-            case 0xFD:  // Keepalive
-              //console.log("Received a keepalive message.");
-              // This message has no payload. We should just send a Keepalive message back.
-              if (this.status == "authenticated")
-                this._sendKeepalive();
-              break;
-            
-            default:
-              console.log("Received an unidentifiable message with type " + type + " and payload length " + length + "(" + buf.byteLength + " bytes)");
-              error = true; // This will stop the while-loop
+              case 0xFD:  // Keepalive
+                //console.log("Received a keepalive message.");
+                // This message has no payload. We should just send a Keepalive message back.
+                if (this.status == "authenticated")
+                  this._sendKeepalive();
+                break;
+              
+              default:
+                console.log("Received an unidentifiable message with type " + type + " and payload length " + length + "(" + buf.byteLength + " bytes)");
+                error = true; // This will stop the while-loop
+            }
           }
         }
+                
+        this._shouldPollSocket = true;
       },
       
       // Assemble a Ninjam client message and write it to the server
