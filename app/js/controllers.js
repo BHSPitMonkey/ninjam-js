@@ -95,6 +95,13 @@ angular.module('myApp.controllers', []).
           break;
         case "USERCOUNT":
           break;
+        case "BPMBPI":
+          $scope.messages.push({
+            type: "topic",
+            sender: "",
+            content: "BPM and BPI are now " + messageFields.arg1 + " and " + messageFields.arg2
+          });
+          break;
       }
       console.log("Messages now has count: " + $scope.messages.length);
     };

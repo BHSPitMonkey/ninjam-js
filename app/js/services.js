@@ -19,7 +19,7 @@ angular.module('myApp.services', []).
       
       nextUint16 : function() {
         this._offset += 2;
-        return this._data.getUint16(this._offset - 2);
+        return this._data.getUint16(this._offset - 2, true);
       },
       
       nextUint32 : function() {
@@ -34,7 +34,7 @@ angular.module('myApp.services', []).
       
       nextInt16 : function() {
         this._offset += 2;
-        return this._data.getInt16(this._offset - 2);
+        return this._data.getInt16(this._offset - 2, true);
       },
       
       nextInt32 : function() {
@@ -137,10 +137,17 @@ angular.module('myApp.services', []).
         onChallenge: null,
         onChatMessage: null
       };
-      this._msgBacklog = null;    // ArrayBuffer of incomplete server message(s)
+      this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
       this._audioContext = new webkitAudioContext();
-      this._audioBufferSource = this._audioContext.createBufferSource();
-      console.log(this._audioBufferSource);
+      this._nextIntervalBegin = null; // setTimeout handle for local interval setup
+      //this._audioBufferSource = this._audioContext.createBufferSource();
+      
+      //console.log(this._audioBufferSource);
+      
+      // Set up metronome sounds
+      this._metAudioBufferHi = this._audioContext.createBufferSource();
+      this._metAudioBufferLo = this._audioContext.createBufferSource();
+      // TODO
       
       // Try to create the socket
       console.log("Trying to create socket...");
@@ -233,7 +240,11 @@ angular.module('myApp.services', []).
           $timeout.cancel(this._socketPoll);
           this._socketPoll = null;
         }
-        this.users = [];
+        if (this._nextIntervalBegin) {
+          $timeout.cancel(this._nextIntervalBegin);
+          this._nextIntervalBegin = null;
+        }
+        this.users = {};
         this.bpm = null;
         this.bpi = null;
         this.topic = null;
@@ -313,6 +324,16 @@ angular.module('myApp.services', []).
           // Parse the received data
           this._parseMessages(readInfo.data);
         }
+        else if (readInfo.resultCode == -15)
+        {
+          console.log("Socket is no longer connected!");
+          this.disconnect();
+        }
+        else if (readInfo.resultCode < -1)
+        {
+          console.log("Socket read failed:");
+          console.log(readInfo);
+        }
       },
       
       // Called when a write operation completes (or has an error)
@@ -321,9 +342,8 @@ angular.module('myApp.services', []).
         //console.log(writeInfo);
       },
       
-      // Converts an array buffer to a string
-      //
-      _arrayBufferToString : function(buf, callback) {
+      // Converts an array buffer to a string asynchronously
+      _arrayBufferToStringAsync : function(buf, callback) {
         var bb = new Blob([new Uint8Array(buf)]);
         var f = new FileReader();
         f.onload = function(e) {
@@ -333,14 +353,51 @@ angular.module('myApp.services', []).
       },
       
       // Converts a string to an array buffer
-      _stringToArrayBuffer : function(str, callback) {
+      _stringToArrayBufferAsync : function(str, callback) {
         var bb = new Blob([str]);
         var f = new FileReader();
         f.onload = function(e) {
             callback(e.target.result);
         };
         f.readAsArrayBuffer(bb);
-      }, //
+      },
+      
+      // Converts an array buffer to a hex string
+      _arrayBufferToHexString : function(buf) {
+        var str = "";
+        var arr = new Uint8Array(buf);
+        for (var i=0; i<arr.byteLength; i++) {
+          var hex = arr[i].toString(16);
+          if (hex.length == 1) hex = "0" + hex;
+          str += hex;
+        }
+        return str;
+      },
+      
+      // Converts an array buffer to a string
+      _arrayBufferToString : function(buf) {
+        var str = "";
+        var arr = new Uint8Array(buf);
+        for (var i=0; i<arr.byteLength; i++) {
+          str += String.fromCharCode(arr[i]);
+        }
+        return str;
+      },
+      
+      // Sets up a new interval
+      _beginNewInterval : function() {
+        console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime);
+        this._currentIntervalCtxTime = this._audioContext.currentTime;
+        var timeToNext = (60.0 * this.bpi) / this.bpm; // in seconds
+        this._nextIntervalCtxTime = this._currentIntervalCtxTime + timeToNext;
+        
+        console.log(timeToNext);
+        
+        // Schedule metronome beeps
+        
+        // Call this function again at the start of the next interval
+        this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), timeToNext * 1000);
+      },
       
       // Parses an ArrayBuffer received from a Ninjam server
       _parseMessages : function(buf) {
@@ -383,13 +440,15 @@ angular.module('myApp.services', []).
         
         // As long as the message has more data and we haven't hit errors...
         while (msg.hasMoreData() && !error) {
+          if (msg.bytesRemaining() < 5) {
+            this._msgBacklog = buf.slice(msg._offset);
+            break;
+          }
           var type = msg.nextUint8();
           var length = msg.nextUint32();
           
           // Are there `length` bytes remaining for us to peruse?
-          //console.log("Message has " + msg.bytesRemaining() + " bytes remaining. This payload is " + length + " bytes.");
           if (msg.bytesRemaining() < length) {
-            // We don't have this entire payload yet. Move to backlog and break.
             this._msgBacklog = buf.slice(msg._offset - 5);
             break;
           }
@@ -442,8 +501,21 @@ angular.module('myApp.services', []).
                   bpi: msg.nextUint16()
                 };
                 console.log(fields);
+                this.bpm = fields.bpm;
+                this.bpi = fields.bpi;
+                
+                // Kick off the local beat timing system
+                if (this._nextIntervalBegin == null)
+                  this._beginNewInterval();
                 
                 // TODO: Notify user interface
+                if (this._callbacks.onChatMessage) {
+                  this._callbacks.onChatMessage({
+                    command: 'BPMBPI',
+                    arg1: fields.bpm,
+                    arg2: fields.bpi
+                  });
+                }
                 break;
               
               case 0x03:  // Server Userinfo Change Notify
@@ -467,63 +539,64 @@ angular.module('myApp.services', []).
                   
                   // If channel is active
                   if (fields.active == 1) {
-                    if (!this.users[username]) {
-                      this.users[username] = {
+                    if (!this.users[fields.username]) {
+                      this.users[fields.username] = {
                         name: username,
                         fullname: fields.username,
                         ip: ip,
                         channels: {}
                       };
                     }
-                    if (!this.users[username]["channels"][fields.channelIndex]) {
-                      this.users[username]["channels"][fields.channelIndex] = {};
+                    if (!this.users[fields.username]["channels"][fields.channelIndex]) {
+                      this.users[fields.username]["channels"][fields.channelIndex] = {};
                       
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)
                         this.setUsermask([fields.username]);
                     }
-                    this.users[username]["channels"][fields.channelIndex]["volume"] = fields.volume;
-                    this.users[username]["channels"][fields.channelIndex]["pan"] = fields.pan;
-                    this.users[username]["channels"][fields.channelIndex]["name"] = fields.channelName;
+                    this.users[fields.username]["channels"][fields.channelIndex]["volume"] = fields.volume;
+                    this.users[fields.username]["channels"][fields.channelIndex]["pan"] = fields.pan;
+                    this.users[fields.username]["channels"][fields.channelIndex]["name"] = fields.channelName;
                   }
                   else {
                     // This channel is no longer active, so remove it from the store
-                    this.users[username]["channels"].splice(fields.channelIndex);
+                    if (this.users[fields.username])
+                      this.users[fields.username]["channels"].splice(fields.channelIndex);
                   }
                 }
-                
-                // TODO: Notify user interface
                 break;
               
               case 0x04:  // Server Download Interval Begin
                 console.log("Received a Server Download Interval Begin notification.");
                 var fields = {
-                  guid: msg.nextArrayBuffer(16),
+                  guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
                   estimatedSize: msg.nextUint32(),
-                  fourCC: msg.nextArrayBuffer(4),
+                  fourCC: this._arrayBufferToString(msg.nextArrayBuffer(4)),
                   channelIndex: msg.nextUint8(),
                   username: msg.nextString()
-                };
+                };                
                 console.log(fields);
                 
                 // TODO
                 break;
               
-              case 0x05:  // Server Download Interval Write
+              case 0x05:  // Server Download Interval Write (receiving some audio)
                 console.log("Received a Server Download Interval Write notification. Payload size " + length);
                 var fields = {
-                  guid: msg.nextArrayBuffer(16),
+                  guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
                   flags: msg.nextUint8(),
                   audioData: msg.nextArrayBuffer(length - 17)
                 };
                 console.log(fields);
                 
                 // TODO
+                /*
                 this._audioContext.decodeAudioData(fields.audioData, function(buffer) {
                   this._audioBufferSource.buffer = buffer;
                   this._audioBufferSource.connect(this._audioContext.destination);
                   this._audioBufferSource.start(0);
                 }.bind(this));
+                */
                 
                 break;
               
@@ -550,7 +623,7 @@ angular.module('myApp.services', []).
                     var pieces = fields.arg1.split('@', 2);
                     var username = pieces[0];
                     var ip = (pieces.length == 2) ? pieces[1] : "";
-                    this.users[username] = {
+                    this.users[fields.arg1] = {
                       name: username,
                       fullname: fields.arg1,
                       ip: ip,
@@ -558,7 +631,7 @@ angular.module('myApp.services', []).
                     };
                     break;
                   case "PART":
-                    delete this.users[fields.arg1.split('@')[0]];
+                    delete this.users[fields.arg1];
                     break;
                   case "USERCOUNT":
                     break;
@@ -618,7 +691,7 @@ angular.module('myApp.services', []).
       
       // Send a Keepalive message to the server
       _sendKeepalive : function() {
-        //console.log("Sending keepalive message.");
+        console.log("Sending keepalive.");
         this._packMessage(0xFD, null);
       },
       
