@@ -137,12 +137,12 @@ angular.module('myApp.services', []).
         onChallenge: null,
         onChatMessage: null
       };
+      this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
+      this._lastSendTime = null;      // Time of last socket write
       this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
       this._audioContext = new webkitAudioContext();
       this._nextIntervalBegin = null; // setTimeout handle for local interval setup
-      //this._audioBufferSource = this._audioContext.createBufferSource();
-      
-      //console.log(this._audioBufferSource);
+      this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
       
       // Set up metronome sounds
       this._metAudioBufferHi = this._audioContext.createBufferSource();
@@ -155,6 +155,14 @@ angular.module('myApp.services', []).
     };
     
     angular.extend(NinjamClient.prototype, {
+      
+      // Periodically check whether a new keepalive message is needed
+      _checkKeepalive : function() {
+        if (this.status == "authenticated" && (new Date()).getTime() - this._lastSendTime > 3000)
+          this._sendKeepalive();
+        
+        this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
+      },
       
       // Connect to specified Ninjam server
       connect : function(host, username, password, onChallenge) {
@@ -243,6 +251,10 @@ angular.module('myApp.services', []).
         if (this._nextIntervalBegin) {
           $timeout.cancel(this._nextIntervalBegin);
           this._nextIntervalBegin = null;
+        }
+        if (this._checkKeepaliveTimeout) {
+          $timeout.cancel(this._checkKeepaliveTimeout)
+          this._checkKeepaliveTimeout = null;
         }
         this.users = {};
         this.bpm = null;
@@ -386,12 +398,11 @@ angular.module('myApp.services', []).
       
       // Sets up a new interval
       _beginNewInterval : function() {
-        console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime);
         this._currentIntervalCtxTime = this._audioContext.currentTime;
         var timeToNext = (60.0 * this.bpi) / this.bpm; // in seconds
         this._nextIntervalCtxTime = this._currentIntervalCtxTime + timeToNext;
         
-        console.log(timeToNext);
+        console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + timeToNext);
         
         // Schedule metronome beeps
         
@@ -491,6 +502,7 @@ angular.module('myApp.services', []).
                 }
                 else {
                   this.status = "authenticated";
+                  this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
                 }
                 break;
               
@@ -577,27 +589,61 @@ angular.module('myApp.services', []).
                 };                
                 console.log(fields);
                 
-                // TODO
+                // Set up a queue for this GUID, associated with the proper user/chan
+                if (fields.fourCC == "OGGv") {
+                  this._audioIntervals[fields.guid] = [];
+                  
+                  console.log("Audio intervals:");
+                  console.log(this._audioIntervals);
+                }
                 break;
               
               case 0x05:  // Server Download Interval Write (receiving some audio)
-                console.log("Received a Server Download Interval Write notification. Payload size " + length);
+                //console.log("Received a Server Download Interval Write notification. Payload size " + length);
                 var fields = {
                   guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
                   flags: msg.nextUint8(),
                   audioData: msg.nextArrayBuffer(length - 17)
                 };
-                console.log(fields);
+                //console.log(fields);
+                //console.log("Received a Server Download Interval Write notification. Payload size " + length + " Guid: " + fields.guid + " Flags: " + fields.flags);
                 
-                // TODO
-                /*
-                this._audioContext.decodeAudioData(fields.audioData, function(buffer) {
-                  this._audioBufferSource.buffer = buffer;
-                  this._audioBufferSource.connect(this._audioContext.destination);
-                  this._audioBufferSource.start(0);
-                }.bind(this));
-                */
+                // Add this audio to the queue for this GUID.
+                if (this._audioIntervals[fields.guid])
+                  this._audioIntervals[fields.guid].push(fields.audioData);
+                else
+                  console.log("Tried pushing to guid queue " + fields.guid + " but it's not there!");
                 
+                // If flags==1, this queue is complete and may be assembled/decoded/scheduled for playback
+                if (fields.flags == 1) {
+                  var totalSize = 0;
+                  for (var i=0; i<this._audioIntervals[fields.guid].length; i++)
+                    totalSize += this._audioIntervals[fields.guid][i].byteLength;
+                  var fullBufferArray = new Uint8Array(totalSize);
+                  var offset = 0;
+                  for (var i=0; i<this._audioIntervals[fields.guid].length; i++) {
+                    fullBufferArray.set( new Uint8Array(this._audioIntervals[fields.guid][i]), offset );
+                    offset += this._audioIntervals[fields.guid][i].byteLength;
+                  } // fullBufferArray is now complete
+                  delete this._audioIntervals[fields.guid];
+                  console.log("Deleted interval queue " + fields.guid);
+                  console.log(this._audioIntervals);
+                  this._audioContext.decodeAudioData(fullBufferArray.buffer, function(audioBuffer) {
+                    var bufferSource = this._audioContext.createBufferSource();
+                    bufferSource.buffer = audioBuffer;
+                    bufferSource.connect(this._audioContext.destination);
+                    bufferSource.start(this._nextIntervalCtxTime);
+                    console.log("Scheduling audioBuffer " + fields.guid + " to play at time " + this._nextIntervalCtxTime + " - current time is " + this._audioContext.currentTime);
+                    //console.log(audioBuffer);
+                    //console.log(bufferSource);
+                    
+                    //delete this._audioIntervals[fields.guid];
+                    //console.log("Deleted interval queue " + fields.guid);
+                    //console.log(this._audioIntervals);
+                  }.bind(this), function(error) {
+                    console.log("Error decoding audio data for guid: " + guid);
+                  }.bind(this));
+                }
                 break;
               
               case 0xc0:  // Chat Message
@@ -687,11 +733,12 @@ angular.module('myApp.services', []).
         console.log(str); */
         
         chrome.socket.write(this.socketId, buf, this._onDataWrite.bind(this));
+        this._lastSendTime = (new Date()).getTime();
       },
       
       // Send a Keepalive message to the server
       _sendKeepalive : function() {
-        console.log("Sending keepalive.");
+        //console.log("Sending keepalive.");
         this._packMessage(0xFD, null);
       },
       

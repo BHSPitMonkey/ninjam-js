@@ -103,7 +103,6 @@ angular.module('myApp.controllers', []).
           });
           break;
       }
-      console.log("Messages now has count: " + $scope.messages.length);
     };
     NinjamClient._callbacks.onChatMessage = $scope.onChatMessage.bind($scope);
   }).
