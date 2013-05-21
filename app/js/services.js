@@ -150,9 +150,9 @@ angular.module('myApp.services', []).
       this.bpi = null;            // Beats per interval (phrase length)
       this.maxChannels = null;    // Max channels per user allowed by server
       this.topic = null;
-      this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
+      this.autosubscribe = true; // Currently breaks us because we are bad at sockets
       
-      this._localChannels = [];   // Contains objects with information about local channels
+      this._localChannels = [{name:"Listening Only"}];
       
       this._socketPoll = null;    // setTimeout handle for continuous socket reads
       this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
@@ -291,15 +291,14 @@ angular.module('myApp.services', []).
           allNamesLength += (this._localChannels[i].name.length + 1); // +1 for NUL char
         }
         //var channelName = "Listening Only";
-        var paramLength = allNamesLength + 4;
-        var msg = new MessageBuilder(2 + (paramLength * this._localChannels.length));
-        msg.appendUint16(paramLength);  // Channel parameter size
+        var msg = new MessageBuilder(2 + allNamesLength + (4 * this._localChannels.length));
+        msg.appendUint16(4);  // Channel parameter size
         for (var i=0; i<this._localChannels.length; i++) {
           msg.appendString(this._localChannels[i].name);  // Channel name
           msg.appendInt16(-1000);         // Volume (-100dB)
           msg.appendInt8(0);              // Pan
           msg.appendUint8(1);             // Flags (???)
-          msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
+          //msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
         }
         
         this._packMessage(0x82, msg.buf);
