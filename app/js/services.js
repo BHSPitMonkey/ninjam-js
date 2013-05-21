@@ -89,9 +89,24 @@ angular.module('myApp.services', []).
         this._offset++;
       },
       
+      appendUint16 : function(value) {
+        this._data.setUint16(this._offset, value, true);
+        this._offset += 2;
+      },
+      
       appendUint32 : function(value) {
         this._data.setUint32(this._offset, value, true);
         this._offset += 4;
+      },
+      
+      appendInt8 : function(value) {
+        this._data.setInt8(this._offset, value);
+        this._offset++;
+      },
+      
+      appendInt16 : function(value) {
+        this._data.setInt16(this._offset, value, true);
+        this._offset += 2;
       },
       
       appendInt32 : function(value) {
@@ -107,6 +122,12 @@ angular.module('myApp.services', []).
         // Finish with NUL if length is unspecified
         if (!length)
           this.appendUint8(0);
+      },
+      
+      appendZeros : function(count) {
+        for (var i=0; i<count; i++) {
+          this.appendUint8(0);
+        }
       },
       
       // Returns true if there is still more data to be retrieved from the message
@@ -129,7 +150,9 @@ angular.module('myApp.services', []).
       this.bpi = null;            // Beats per interval (phrase length)
       this.maxChannels = null;    // Max channels per user allowed by server
       this.topic = null;
-      this.autosubscribe = true; // Currently breaks us because we are bad at sockets
+      this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
+      
+      this._localChannels = [];   // Contains objects with information about local channels
       
       this._socketPoll = null;    // setTimeout handle for continuous socket reads
       this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
@@ -145,8 +168,34 @@ angular.module('myApp.services', []).
       this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
       
       // Set up metronome sounds
-      this._metAudioBufferHi = this._audioContext.createBufferSource();
-      this._metAudioBufferLo = this._audioContext.createBufferSource();
+      this._hiClickBuffer = null;
+      this._loClickBuffer = null;
+      var requestLo = new XMLHttpRequest();
+      requestLo.open("GET", "snd/met-lo.wav", true);
+      requestLo.responseType = "arraybuffer";
+      requestLo.onload = function() {
+        // Decode asynchronously
+        this._audioContext.decodeAudioData(
+          requestLo.response,
+          function(buffer) {
+              this._loClickBuffer = buffer;
+          }.bind(this)
+        );
+      }.bind(this);
+      requestLo.send();
+      var requestHi = new XMLHttpRequest();
+      requestHi.open("GET", "snd/met-hi.wav", true);
+      requestHi.responseType = "arraybuffer";
+      requestHi.onload = function() {
+        // Decode asynchronously
+        this._audioContext.decodeAudioData(
+          requestHi.response,
+          function(buffer) {
+              this._hiClickBuffer = buffer;
+          }.bind(this)    
+        );
+      }.bind(this);
+      requestHi.send();
       // TODO
       
       // Try to create the socket
@@ -235,9 +284,25 @@ angular.module('myApp.services', []).
         this._packMessage(0x81, msg.buf);
       },
       
-      // Tell the server about our channel(s)
+      // Tell the server about our channel(s).
       setChannelInfo : function() {
-        // TODO
+        var allNamesLength = 0;
+        for (var i=0; i<this._localChannels.length; i++) {
+          allNamesLength += (this._localChannels[i].name.length + 1); // +1 for NUL char
+        }
+        //var channelName = "Listening Only";
+        var paramLength = allNamesLength + 4;
+        var msg = new MessageBuilder(2 + (paramLength * this._localChannels.length));
+        msg.appendUint16(paramLength);  // Channel parameter size
+        for (var i=0; i<this._localChannels.length; i++) {
+          msg.appendString(this._localChannels[i].name);  // Channel name
+          msg.appendInt16(-1000);         // Volume (-100dB)
+          msg.appendInt8(0);              // Pan
+          msg.appendUint8(1);             // Flags (???)
+          msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
+        }
+        
+        this._packMessage(0x82, msg.buf);
       },
       
       // Disconnect from the current server
@@ -399,15 +464,23 @@ angular.module('myApp.services', []).
       // Sets up a new interval
       _beginNewInterval : function() {
         this._currentIntervalCtxTime = this._audioContext.currentTime;
-        var timeToNext = (60.0 * this.bpi) / this.bpm; // in seconds
-        this._nextIntervalCtxTime = this._currentIntervalCtxTime + timeToNext;
+        var secondsPerBeat = 60.0 / this.bpm;
+        var secondsToNext = secondsPerBeat * this.bpi; // in seconds
+        this._nextIntervalCtxTime = this._currentIntervalCtxTime + secondsToNext;
         
-        console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + timeToNext);
+        console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + secondsToNext);
         
-        // Schedule metronome beeps
+        // Schedule metronome beeps for this interval (and the downbeat of the next)
+        for (var i=0; i<this.bpi; i++) {
+          var bufferSource = this._audioContext.createBufferSource();
+          var clickTime = this._currentIntervalCtxTime + (secondsPerBeat * i);
+          bufferSource.buffer = (i == 0) ? this._hiClickBuffer : this._loClickBuffer;
+          bufferSource.connect(this._audioContext.destination);
+          bufferSource.start(clickTime);
+        }
         
         // Call this function again at the start of the next interval
-        this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), timeToNext * 1000);
+        this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
       },
       
       // Parses an ArrayBuffer received from a Ninjam server
@@ -471,7 +544,8 @@ angular.module('myApp.services', []).
                 console.log("Received a server auth challenge.");
                 var fields = {
                   challenge: msg.nextString(8),
-                  serverCapabilities: msg.nextUint32(),
+                  serverCapabilities: msg.nextInt32(),
+                  //keepaliveInterval: msg.nextInt16(),
                   protocolVersion: msg.nextUint32(),
                   licenseAgreement: msg.nextString()
                 };
@@ -503,6 +577,7 @@ angular.module('myApp.services', []).
                 else {
                   this.status = "authenticated";
                   this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
+                  this.setChannelInfo();
                 }
                 break;
               
