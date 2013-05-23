@@ -3,7 +3,10 @@
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('ServerBrowser', function($scope, $dialog, NinjamClient) {
+  controller('AppController', function($scope, NinjamClient) {
+    
+  }).
+  controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient) {
     $scope.ninjam = NinjamClient;
     
     // Not sure if these are even needed or do anything
@@ -30,9 +33,11 @@ angular.module('myApp.controllers', []).
         .open()
         .then(function(result){
           NinjamClient.respondToChallenge(result);
+          // Change to jam view
+          $location.path('/#jam');
       });
       
-      $scope.visible = false;
+      //$scope.visible = false;
     };
     
     // Connect to a server

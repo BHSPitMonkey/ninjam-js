@@ -1,0 +1,42 @@
+  <div class="serverbrowser-pane" ng-controller="ServerBrowser">
+    <h1>Choose a Server</h1>
+    <p>To jam with other musicians, first you need to choose a server to connect to.</p>
+    
+    <tabs>
+        <pane heading="Public">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>ninbot.com:2049</td>
+                        <td>(More Info)</td>
+                    </tr>
+                    <tr>
+                        <td>ninbot.com:2050</td>
+                        <td>(More Info)</td>
+                    </tr>
+                    <tr>
+                        <td>ninbot.com:2051</td>
+                        <td>(More Info)</td>
+                    </tr>
+                    <tr>
+                        <td>ninbot.com:2052</td>
+                        <td>(More Info)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </pane>
+        <pane heading="Recent">
+        
+        </pane>
+        <pane heading="Custom">
+        
+        </pane>
+    </tabs>
+    
+    <label>Default Username</label>
+    <input type="text" placeholder="e.g. HeroOfGuitars" ng-model="defaultUsername">
+    <label>Server Host</label>
+    <input type="text" placeholder="e.g. ninbot.com:2049" ng-model="host">
+    <br>
+    <button class="btn btn-primary" ng-click="connect()">Connect</button>
+  </div>

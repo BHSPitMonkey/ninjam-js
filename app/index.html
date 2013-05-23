@@ -12,8 +12,7 @@
   <link rel="stylesheet" href="lib/bootstrap/bootstrap.css">
   <link rel="stylesheet" href="css/app.css">
 </head>
-<body ng-cloak>
-
+<body ng-cloak ng-controller="AppController">
   <div class="navbar" ng-controller="HeaderPane">
     <div class="navbar-inner">
       <a class="brand" href="#">Ninjam JS</a>
@@ -33,56 +32,6 @@
       <!--code class="pull-right">{{ninjam.status}}</code-->
     </div>
   </div>
-  
-  <div class="users-pane" ng-controller="UsersPane">
-    <h2>Users and Channels</h2>
-    <div class="users">
-      <div class="user" ng-repeat="user in ninjam.users">
-        <div class="user-titlebar">
-          <div class="user-ip">{{user.ip}}</div>
-          <div class="user-title">{{user.name}}</div>
-        </div>
-        <div class="channels">
-          <div class="channel user" ng-repeat="channel in user.channels">
-            <div class="user-titlebar">
-              <div class="user-title">{{channel.name}}</div>
-            </div>
-            <p>Volume: "{{channel.volume}}"</p>
-            <p>Pan: "{{channel.pan}}"</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="sidebar" ng-controller="ChatPane">
-    <h2>Chat</h2>
-    <div class="messages" id="messages">
-      <div ng-repeat="message in messages" class="message {{message.type}}">
-        <span class="sender">{{message.sender}}</span>{{message.content}}
-      </div>
-    </div>
-    <textarea rows="2" ng-disabled="ninjam.status != 'authenticated'" ui-keypress="{13:'chatSubmit($event)'}"></textarea>
-  </div>
-
-  <div ng-controller="ServerBrowser">
-    <div class="modal" modal="visible" close="close()" options="opts">
-      <div class="modal-header">
-        <h4>Connect to a Ninjam Server</h4>
-      </div>
-      <div class="modal-body">
-        <label>Default Username</label>
-        <input type="text" placeholder="e.g. HeroOfGuitars" ng-model="defaultUsername">
-        <label>Server Host</label>
-        <input type="text" placeholder="e.g. ninbot.com:2049" ng-model="host">
-        <br>
-        <button class="btn btn-primary" ng-click="connect()">Connect</button>
-        <!--button class="btn btn-primary" ng-click="connect()" ng-disabled="status != 'ready'">Connect</button-->
-      </div>
-      <!--div class="modal-footer">
-        <button class="btn btn-warning cancel" ng-click="close()">Cancel</button>
-      </div-->
-    </div>
-  </div>
+  <ng-view></ng-view>
 </body>
 </html>

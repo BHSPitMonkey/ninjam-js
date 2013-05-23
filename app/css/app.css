@@ -1,41 +1,37 @@
 /* app css stylesheet */
 
-.menu {
-  list-style: none;
-  border-bottom: 0.1em solid black;
-  margin-bottom: 2em;
-  padding: 0 0 0.5em;
+/* Bootstrap Overrides */
+
+.nav-tabs > .active > a, .nav-tabs > .active > a:hover, .nav-tabs > .active > a:focus {
+  background: none;
 }
 
-.menu:before {
-  content: "[";
+/* Application */
+
+.navbar {
+  margin-bottom: 0;
 }
 
-.menu:after {
-  content: "]";
+.serverbrowser-pane {
+  background: #E8E8E8;
+  padding: 50px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  top: 42px;
+  right: 0;
 }
 
-.menu > li {
-  display: inline;
+.serverbrowser-pane h1 {
+  color: #666;
 }
-
-.menu > li:before {
-  content: "|";
-  padding-right: 0.3em;
-}
-
-.menu > li:nth-child(1):before {
-  content: "";
-  padding: 0;
-}
-
 
 .navbar {
   z-index: 5 !important;
 }
 
 .users-pane {
-  background: #ddd;
+  background: #E8E8E8;
   position: absolute;
   bottom: 0;
   left: 0;
