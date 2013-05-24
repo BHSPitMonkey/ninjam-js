@@ -9,8 +9,7 @@ angular.module('myApp.controllers', []).
   controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient) {
     $scope.ninjam = NinjamClient;
     
-    // Not sure if these are even needed or do anything
-    $scope.visible = true;
+    // Dialog options
     $scope.opts = {
       backdrop: true,
       backdropFade: true,
@@ -20,8 +19,19 @@ angular.module('myApp.controllers', []).
     };
     
     // TODO: Blank these defaults
-    $scope.defaultUsername = "NinjamJSUser";
-    $scope.host = "ninjamer.com:2051";
+    //$scope.defaultUsername = "NinjamJSUser";
+    //$scope.host = "ninjamer.com:2051";
+    
+    $scope.publicServers = [
+      { host: "ninbot.com:2049" },
+      { host: "ninbot.com:2050" },
+      { host: "ninbot.com:2051" },
+      { host: "ninbot.com:2052" },
+      { host: "ninjamer.com:2049" },
+      { host: "ninjamer.com:2050" },
+      { host: "ninjamer.com:2051" },
+      { host: "ninjamer.com:2052" },
+    ];
     
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
@@ -41,9 +51,11 @@ angular.module('myApp.controllers', []).
     };
     
     // Connect to a server
-    $scope.connect = function() {
-      console.log("You tried connecting!");
-      NinjamClient.connect($scope.host, $scope.defaultUsername, '', $scope.onAuthChallenge);
+    $scope.connect = function(host, user, pass) {
+      console.log(host);
+      return;
+      console.log("You tried connecting! " + host);
+      NinjamClient.connect(host, user, pass, $scope.onAuthChallenge);
     };
   }).
   controller('HeaderPane', function($scope, NinjamClient) {

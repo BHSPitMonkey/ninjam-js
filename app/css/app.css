@@ -10,6 +10,7 @@
 
 .navbar {
   margin-bottom: 0;
+  z-index: 5 !important;
 }
 
 .serverbrowser-pane {
@@ -26,8 +27,31 @@
   color: #666;
 }
 
-.navbar {
-  z-index: 5 !important;
+.tabbable ul.nav-tabs {
+  margin-bottom: 0;
+}
+
+.tab-content {
+  min-width: 500px;
+  height: 400px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.server-info > div {
+  display: inline-block;
+}
+
+.server-host {
+  width: 300px;
+}
+
+.server:nth-child(even) {
+  background: #ececec;
+}
+
+.connect-form > div {
+  display: inline-block;
 }
 
 .users-pane {

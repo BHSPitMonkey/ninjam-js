@@ -4,26 +4,25 @@
     
     <tabs>
         <pane heading="Public">
-            <table>
-                <tbody>
-                    <tr>
-                        <td>ninbot.com:2049</td>
-                        <td>(More Info)</td>
-                    </tr>
-                    <tr>
-                        <td>ninbot.com:2050</td>
-                        <td>(More Info)</td>
-                    </tr>
-                    <tr>
-                        <td>ninbot.com:2051</td>
-                        <td>(More Info)</td>
-                    </tr>
-                    <tr>
-                        <td>ninbot.com:2052</td>
-                        <td>(More Info)</td>
-                    </tr>
-                </tbody>
-            </table>
+            <accordion close-others="true">
+              <accordion-group heading="{{server.host}}" ng-repeat="server in publicServers">
+                <form class="connect-form" name="form">
+                  
+                    <label>Username</label>
+                    <input name="host" type="hidden" value="{{server.host}}" />
+                    <input name="user" type="text" value="NinjamJSUser" />
+                  
+                  <div>
+                    <label>Password</label>
+                    <input name="pass" type="text" placeholder="Blank for Anonymous" />
+                  </div>
+                  <div>
+                    <label></label>
+                    <input type="submit" value="Connect" class="btn btn-primary" ng-click="connect(form)" />
+                  </div>
+                </form>
+              </accordion-group>  
+            </accordion>
         </pane>
         <pane heading="Recent">
         
@@ -33,10 +32,10 @@
         </pane>
     </tabs>
     
-    <label>Default Username</label>
+    <!--label>Default Username</label>
     <input type="text" placeholder="e.g. HeroOfGuitars" ng-model="defaultUsername">
     <label>Server Host</label>
     <input type="text" placeholder="e.g. ninbot.com:2049" ng-model="host">
     <br>
-    <button class="btn btn-primary" ng-click="connect()">Connect</button>
+    <button class="btn btn-primary" ng-click="connect()">Connect</button-->
   </div>
