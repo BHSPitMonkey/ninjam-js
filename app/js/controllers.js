@@ -3,8 +3,24 @@
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('AppController', function($scope, NinjamClient) {
-    
+  controller('AppController', function($scope, $dialog, NinjamClient) {
+    $scope.onDisconnect = function(reason) {
+      // TODO: Show dialog
+      var btns = [{label: 'Okay'}];
+      var opts = {
+        backdrop: true,
+        backdropFade: true,
+        dialogFade: true,
+      };
+      $dialog.messageBox("Disconnected from Server", "Reason: " + reason, btns, opts)
+        .open()
+        .then(function(result){
+          NinjamClient.respondToChallenge(result);
+          // Change to jam view
+          $location.path('/#jam');
+      });
+    };
+    NinjamClient._callbacks.onDisconnect = $scope.onDisconnect.bind($scope);
   }).
   
   controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient) {

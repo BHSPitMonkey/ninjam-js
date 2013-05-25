@@ -305,8 +305,12 @@ angular.module('myApp.services', []).
       },
       
       // Disconnect from the current server
-      disconnect : function() {
+      disconnect : function(reason) {
         console.log("Disconnecting from server.");
+        
+        if (this._callbacks.onDisconnect)
+          this._callbacks.onDisconnect(reason);
+        
         this.status = "disconnecting";
         if (this._socketPoll) {
           $timeout.cancel(this._socketPoll);
@@ -403,7 +407,7 @@ angular.module('myApp.services', []).
         else if (readInfo.resultCode == -15)
         {
           console.log("Socket is no longer connected!");
-          this.disconnect();
+          this.disconnect("Socket became disconnected.");
         }
         else if (readInfo.resultCode < -1)
         {
@@ -571,7 +575,7 @@ angular.module('myApp.services', []).
                 // If flag is not set happily, let's disconnect
                 if (fields.flag == 0) {
                   console.log("Server auth failed: " + fields.error + ". Disconnecting.");
-                  this.disconnect();
+                  this.disconnect(fields.error);
                 }
                 else {
                   this.status = "authenticated";
