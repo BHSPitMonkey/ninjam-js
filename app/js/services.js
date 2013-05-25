@@ -491,17 +491,52 @@ angular.module('myApp.services', []).
           if (i == 0)
             this.currentBeat = 0;
           else
-            $timeout(
-              function(){ this.currentBeat = (this.currentBeat + 1) % this.bpi; }.bind(this),
-              (clickTime - this._currentIntervalCtxTime) * 1000
-            );
+            $timeout(function() {
+              this.currentBeat = (this.currentBeat + 1) % this.bpi;
+            }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
         }
         
-        // Update the currentBeat property
-        this.currentBeat = 0;
+        // Issue a "last call for audio" 1 seconds before the end of the interval
+        $timeout(function() {
+          for (var guid in this._audioIntervals) {
+            this._assembleAudioInterval(guid);
+          }
+        }.bind(this), (secondsToNext - 1) * 1000);
         
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
+      },
+      
+      // Assemble the chunks for an audio interval, decode them, and schedule for playback
+      _assembleAudioInterval : function(guid) {
+        // Collect what chunks we have, and close this GUID for business
+        var chunks = this._audioIntervals[guid];
+        delete this._audioIntervals[guid];
+        
+        // Create an ArrayBuffer containing all the concatenated OGG/vorbis data
+        var totalSize = 0;
+        for (var i=0; i<chunks.length; i++)
+          totalSize += chunks[i].byteLength;
+        var fullBufferArray = new Uint8Array(totalSize);
+        var offset = 0;
+        for (var i=0; i<chunks.length; i++) {
+          fullBufferArray.set( new Uint8Array(chunks[i]), offset );
+          offset += chunks[i].byteLength;
+        } // fullBufferArray is now complete
+        //delete chunks;
+        console.log("Deleted interval queue " + guid);
+        console.log(this._audioIntervals);
+        
+        // Try to decode and then play the audio at the appropriate time
+        this._audioContext.decodeAudioData(fullBufferArray.buffer, function(audioBuffer) {
+          var bufferSource = this._audioContext.createBufferSource();
+          bufferSource.buffer = audioBuffer;
+          bufferSource.connect(this._audioContext.destination);
+          bufferSource.start(this._nextIntervalCtxTime);
+          console.log("Scheduling audioBuffer " + guid + " to play at time " + this._nextIntervalCtxTime + " - current time is " + this._audioContext.currentTime);
+        }.bind(this), function(error) {
+          console.log("Error decoding audio data for guid: " + guid);
+        }.bind(this));
       },
       
       // Parses an ArrayBuffer received from a Ninjam server
@@ -705,41 +740,15 @@ angular.module('myApp.services', []).
                 //console.log("Received a Server Download Interval Write notification. Payload size " + length + " Guid: " + fields.guid + " Flags: " + fields.flags);
                 
                 // Add this audio to the queue for this GUID.
-                if (this._audioIntervals[fields.guid])
+                if (this._audioIntervals[fields.guid]) {
                   this._audioIntervals[fields.guid].push(fields.audioData);
+                  
+                  // If flags==1, this queue is complete and may be assembled/decoded/scheduled for playback
+                  if (fields.flags == 1)
+                    this._assembleAudioInterval(fields.guid);
+                }
                 else
                   console.log("Tried pushing to guid queue " + fields.guid + " but it's not there!");
-                
-                // If flags==1, this queue is complete and may be assembled/decoded/scheduled for playback
-                if (fields.flags == 1) {
-                  var totalSize = 0;
-                  for (var i=0; i<this._audioIntervals[fields.guid].length; i++)
-                    totalSize += this._audioIntervals[fields.guid][i].byteLength;
-                  var fullBufferArray = new Uint8Array(totalSize);
-                  var offset = 0;
-                  for (var i=0; i<this._audioIntervals[fields.guid].length; i++) {
-                    fullBufferArray.set( new Uint8Array(this._audioIntervals[fields.guid][i]), offset );
-                    offset += this._audioIntervals[fields.guid][i].byteLength;
-                  } // fullBufferArray is now complete
-                  delete this._audioIntervals[fields.guid];
-                  console.log("Deleted interval queue " + fields.guid);
-                  console.log(this._audioIntervals);
-                  this._audioContext.decodeAudioData(fullBufferArray.buffer, function(audioBuffer) {
-                    var bufferSource = this._audioContext.createBufferSource();
-                    bufferSource.buffer = audioBuffer;
-                    bufferSource.connect(this._audioContext.destination);
-                    bufferSource.start(this._nextIntervalCtxTime);
-                    console.log("Scheduling audioBuffer " + fields.guid + " to play at time " + this._nextIntervalCtxTime + " - current time is " + this._audioContext.currentTime);
-                    //console.log(audioBuffer);
-                    //console.log(bufferSource);
-                    
-                    //delete this._audioIntervals[fields.guid];
-                    //console.log("Deleted interval queue " + fields.guid);
-                    //console.log(this._audioIntervals);
-                  }.bind(this), function(error) {
-                    console.log("Error decoding audio data for guid: " + guid);
-                  }.bind(this));
-                }
                 break;
               
               case 0xc0:  // Chat Message
