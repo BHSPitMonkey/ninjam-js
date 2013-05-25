@@ -13,6 +13,13 @@
   z-index: 5 !important;
 }
 
+.navbar .progress {
+  display: inline-block;
+  margin: 8px 10px;
+  width: 350px;
+  height: 15px;
+}
+
 .serverbrowser-pane {
   background: #E8E8E8;
   padding: 50px;

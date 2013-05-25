@@ -138,34 +138,40 @@ angular.module('myApp.services', []).
     });
     
     var NinjamClient = function() {
-      this.socketId = null;
-      this.status = "starting";   // Indicates connection status, for debugging
-      this.host = null;
-      this.port = null;
-      this.username = null;
-      this.password = null;
-      this.anonymous = true;      // TODO: initialize as null and allow non-anon mode
-      this.users = {};
-      this.bpm = null;            // Beats per minute (tempo)
-      this.bpi = null;            // Beats per interval (phrase length)
-      this.maxChannels = null;    // Max channels per user allowed by server
-      this.topic = null;
-      this.autosubscribe = true; // Currently breaks us because we are bad at sockets
-      
-      this._localChannels = [{name:"Listening Only"}];
-      
-      this._socketPoll = null;    // setTimeout handle for continuous socket reads
-      this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
-      this._callbacks = {
-        onChallenge: null,
-        onChatMessage: null
+      // Initialize values (only the ones that need resetting after disconnect)
+      this.init = function() {
+        this.socketId = null;
+        this.status = "starting";   // Indicates connection status, for debugging
+        this.host = null;
+        this.port = null;
+        this.username = null;
+        this.password = null;
+        this.anonymous = true;      // TODO: initialize as null and allow non-anon mode
+        this.users = {};
+        this.bpm = null;            // Beats per minute (tempo)
+        this.bpi = null;            // Beats per interval (phrase length)
+        this.currentBeat = null;
+        this.maxChannels = null;    // Max channels per user allowed by server
+        this.topic = null;
+        this.autosubscribe = true; // Currently breaks us because we are bad at sockets
+        
+        this._localChannels = [{name:"Listening Only"}];
+        
+        this._socketPoll = null;    // setTimeout handle for continuous socket reads
+        this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
+        this._callbacks = {
+          onChallenge: null,
+          onChatMessage: null,
+          onDisconnect: null
+        };
+        this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
+        this._lastSendTime = null;      // Time of last socket write
+        this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
+        this._audioContext = new webkitAudioContext();
+        this._nextIntervalBegin = null; // setTimeout handle for local interval setup
+        this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
       };
-      this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
-      this._lastSendTime = null;      // Time of last socket write
-      this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
-      this._audioContext = new webkitAudioContext();
-      this._nextIntervalBegin = null; // setTimeout handle for local interval setup
-      this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
+      this.init();
       
       // Set up metronome sounds
       this._hiClickBuffer = null;
@@ -480,7 +486,19 @@ angular.module('myApp.services', []).
           bufferSource.buffer = (i == 0) ? this._hiClickBuffer : this._loClickBuffer;
           bufferSource.connect(this._audioContext.destination);
           bufferSource.start(clickTime);
+          
+          // Update the currentBeat property at these times as well
+          if (i == 0)
+            this.currentBeat = 0;
+          else
+            $timeout(
+              function(){ this.currentBeat = (this.currentBeat + 1) % this.bpi; }.bind(this),
+              (clickTime - this._currentIntervalCtxTime) * 1000
+            );
         }
+        
+        // Update the currentBeat property
+        this.currentBeat = 0;
         
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
