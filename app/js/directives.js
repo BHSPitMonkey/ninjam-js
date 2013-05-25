@@ -8,4 +8,14 @@ angular.module('myApp.directives', []).
     return function(scope, elm, attrs) {
       elm.text(version);
     };
-  }]);
+  }]).
+  directive('server', function() {
+    return {
+      restrict: 'E',
+      scope: {
+        host: '@',
+        user: '=defaultUsername'
+      },
+      templateUrl: 'partials/server.html'
+    };
+  });

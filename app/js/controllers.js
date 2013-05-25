@@ -6,6 +6,7 @@ angular.module('myApp.controllers', []).
   controller('AppController', function($scope, NinjamClient) {
     
   }).
+  
   controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient) {
     $scope.ninjam = NinjamClient;
     
@@ -20,7 +21,6 @@ angular.module('myApp.controllers', []).
     
     // TODO: Blank these defaults
     //$scope.defaultUsername = "NinjamJSUser";
-    //$scope.host = "ninjamer.com:2051";
     
     $scope.publicServers = [
       { host: "ninbot.com:2049" },
@@ -32,6 +32,11 @@ angular.module('myApp.controllers', []).
       { host: "ninjamer.com:2051" },
       { host: "ninjamer.com:2052" },
     ];
+    
+    // Returns the default username to use for a given host
+    $scope.defaultUsername = function(host) {
+      return 'NinjamJSUser';
+    };
     
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
@@ -52,15 +57,23 @@ angular.module('myApp.controllers', []).
     
     // Connect to a server
     $scope.connect = function(host, user, pass) {
-      console.log(host);
-      return;
-      console.log("You tried connecting! " + host);
+      console.log("Called connect: " + host + " User: " + user + " Pass: " + pass);
       NinjamClient.connect(host, user, pass, $scope.onAuthChallenge);
     };
   }).
+  
+  controller('ServerConnectForm', function($scope) {
+    $scope.data = {
+      user: 'Default',
+      pass: ''
+    };
+    //$scope.host = '';
+  }).
+  
   controller('HeaderPane', function($scope, NinjamClient) {
     $scope.ninjam = NinjamClient;
   }).
+  
   controller('ChatPane', function($scope, $document, NinjamClient) {
     $scope.ninjam = NinjamClient;
     $scope.messages = [];
@@ -123,6 +136,7 @@ angular.module('myApp.controllers', []).
     };
     NinjamClient._callbacks.onChatMessage = $scope.onChatMessage.bind($scope);
   }).
+  
   controller('UsersPane', function($scope, NinjamClient) {
     $scope.ninjam = NinjamClient;
   });
