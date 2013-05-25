@@ -29,14 +29,18 @@
       <p>Nothing here yet.</p>
     </pane>
     <pane heading="Custom">
-      <p>Nothing here yet.</p>
+      <form name="form">
+        <label>Server Host</label>
+        <input name="host" ng-model="data.host" type="text" placeholder="e.g. ninbot.com:2049">
+        <label>Default Username</label>
+        <input name="user" ng-model="data.user" type="text" placeholder="e.g. HeroOfGuitars" value="NinjamJSUser">
+        <label>Default Username</label>
+        <input name="pass" ng-model="data.pass" type="text" placeholder="Blank for Anonymous">
+        <br>
+        <button class="btn btn-primary" ng-click="connect(form.host.$modelValue, form.user.$modelValue, form.pass.$modelValue)">Connect</button>
+      </form>
     </pane>
   </tabs>
   
-  <label>Default Username</label>
-  <input type="text" placeholder="e.g. HeroOfGuitars" value="NinjamJSUser">
-  <label>Server Host</label>
-  <input type="text" placeholder="e.g. ninbot.com:2049" ng-model="host">
-  <br>
-  <button class="btn btn-primary" ng-click="connect()">Connect</button>
+  
 </div>
