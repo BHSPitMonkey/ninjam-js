@@ -12,3 +12,19 @@ NINJAM client and can connect to Ninjam servers, much like the official client.
 
 Ninjam JS is currently in development, but keep an eye on this repository -- 
 beta releases should be available sometime soon!
+
+## Development Status
+
+Ninjam JS is still a work in progress. The current code is capable of
+connecting to servers, sending and receiving chat messages (and votes), and
+(to a slightly buggy degree) listening to audio from other users.
+
+## Screenshots
+
+### Server browser
+
+![Server browser](https://raw.github.com/wiki/BHSPitMonkey/ninjam-js/screenshots/servers.png)
+
+### Jamming on a server
+
+![Jamming on a server](https://raw.github.com/wiki/BHSPitMonkey/ninjam-js/screenshots/jam.png)
