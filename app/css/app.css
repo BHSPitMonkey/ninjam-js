@@ -21,7 +21,7 @@
 }
 
 .serverbrowser-pane {
-  background: #E8E8E8;
+  background: #fcfcfc;
   padding: 50px;
   position: absolute;
   bottom: 0;
@@ -38,11 +38,28 @@
   margin-bottom: 0;
 }
 
+.nav-tabs > .active > a {
+  background: #f0f0f0;
+}
+
 .tab-content {
   min-width: 500px;
   height: 400px;
   overflow-x: hidden;
   overflow-y: auto;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-top-style: none;
+  padding: 5px;
+}
+
+.accordion-group {
+  border-color: #d8d8d8;
+  background: #f7f7f7;
+}
+
+div[heading="Custom"] {
+  padding: 20px;
 }
 
 .server-info > div {
@@ -116,7 +133,7 @@
 }
 
 .sidebar {
-  background: white;
+  background: #fcfcfc;
   bottom: 0;
   position: absolute;
   right: 0;
