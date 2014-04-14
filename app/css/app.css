@@ -21,7 +21,7 @@
 }
 
 .serverbrowser-pane {
-  background: #fcfcfc;
+  background: #eeeeee;
   padding: 50px;
   position: absolute;
   bottom: 0;
@@ -133,7 +133,7 @@ div[heading="Custom"] {
 }
 
 .sidebar {
-  background: #fcfcfc;
+  background: #eeeeee;
   bottom: 0;
   position: absolute;
   right: 0;

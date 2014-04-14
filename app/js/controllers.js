@@ -23,7 +23,7 @@ angular.module('myApp.controllers', []).
     NinjamClient._callbacks.onDisconnect = $scope.onDisconnect.bind($scope);
   }).
   
-  controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient) {
+  controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient, $store) {
     $scope.ninjam = NinjamClient;
     
     // Dialog options
@@ -37,6 +37,7 @@ angular.module('myApp.controllers', []).
     
     // TODO: Blank these defaults
     //$scope.defaultUsername = "NinjamJSUser";
+    //$scope.lastUsedUsername = $store.get("lastUsedUsername");
     
     $scope.publicServers = [
       { host: "ninbot.com:2049" },
@@ -75,6 +76,7 @@ angular.module('myApp.controllers', []).
     $scope.connect = function(host, user, pass) {
       console.log("Called connect: " + host + " User: " + user + " Pass: " + pass);
       NinjamClient.connect(host, user, pass, $scope.onAuthChallenge);
+      $store.set("lastUsedUsername", user);
     };
   }).
   
