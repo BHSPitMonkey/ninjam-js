@@ -2,26 +2,27 @@
 
 /* Bootstrap Overrides */
 
+/*
 .nav-tabs > .active > a, .nav-tabs > .active > a:hover, .nav-tabs > .active > a:focus {
   background: none;
+} */
+
+/* Navbar */
+
+.navbar-right.progress {
+  display: inline-block;
+  margin: 18px 10px 0 10px;
+  width: 350px;
+  height: 15px;
+}
+.navbar-right.btn-group {
+  margin-top: 7px;
+  margin-right: 4px;
 }
 
 /* Application */
 
-.navbar {
-  margin-bottom: 0;
-  z-index: 5 !important;
-}
-
-.navbar .progress {
-  display: inline-block;
-  margin: 8px 10px;
-  width: 350px;
-  height: 15px;
-}
-
 .serverbrowser-pane {
-  background: #eeeeee;
   padding: 50px;
   position: absolute;
   bottom: 0;
@@ -34,56 +35,11 @@
   color: #666;
 }
 
-.tabbable ul.nav-tabs {
-  margin-bottom: 0;
-}
-
-.nav-tabs > .active > a {
-  background: #f0f0f0;
-}
-
-.tab-content {
-  min-width: 500px;
-  height: 400px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-top-style: none;
-  padding: 5px;
-}
-
-.accordion-group {
-  border-color: #d8d8d8;
-  background: #f7f7f7;
-}
-
-div[heading="Custom"] {
-  padding: 20px;
-}
-
-.server-info > div {
-  display: inline-block;
-}
-
-.server-host {
-  width: 300px;
-}
-
-.server:nth-child(even) {
-  background: #ececec;
-}
-
-.connect-form > div {
-  display: inline-block;
-}
-
 .users-pane {
-  background: #E8E8E8;
   position: absolute;
   bottom: 0;
   left: 0;
-  top: 42px;
+  top: 54px;
   right: 300px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -100,7 +56,6 @@ div[heading="Custom"] {
 .user {
   border-radius: 8px;
   background: white;
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
   position: relative;
   margin-bottom: 10px;
   display: block;
@@ -115,16 +70,15 @@ div[heading="Custom"] {
 }
 
 .user-title {
-  color: white;
-  font-weight: bold;
-  text-shadow: -1px 1px 0 black;
-  margin-left: 10px;
 }
 
 .user-ip {
   color: #999;
-  margin-right: 10px;
   float: right;
+}
+
+.users .panel-body {
+  padding: 5px;
 }
 
 .channel {
@@ -133,11 +87,11 @@ div[heading="Custom"] {
 }
 
 .sidebar {
-  background: #eeeeee;
+  background: #f5f5f5;
   bottom: 0;
   position: absolute;
   right: 0;
-  top: 42px;
+  top: 54px;
   width: 300px;
 }
 
@@ -192,7 +146,66 @@ div[heading="Custom"] {
   bottom: 10px;
   left: 10px;
   right: 10px;
-  height: 40px;
-  width: 266px;
+  height: 50px;
+  width: 280px;
   margin-bottom: 0;
 }
+
+/*
+.navbar {
+  margin-bottom: 0;
+  z-index: 5 !important;
+}
+
+.navbar .progress {
+  display: inline-block;
+  margin: 8px 10px;
+  width: 350px;
+  height: 15px;
+}
+.tabbable ul.nav-tabs {
+  margin-bottom: 0;
+}
+
+.nav-tabs > .active > a {
+  background: #f0f0f0;
+}
+
+.tab-content {
+  min-width: 500px;
+  height: 400px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-top-style: none;
+  padding: 5px;
+}
+
+.accordion-group {
+  border-color: #d8d8d8;
+  background: #f7f7f7;
+}
+
+div[heading="Custom"] {
+  padding: 20px;
+}
+
+.server-info > div {
+  display: inline-block;
+}
+
+.server-host {
+  width: 300px;
+}
+
+.server:nth-child(even) {
+  background: #ececec;
+}
+
+.connect-form > div {
+  display: inline-block;
+}
+
+
+*/

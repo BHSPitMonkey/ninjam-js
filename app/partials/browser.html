@@ -2,36 +2,41 @@
   <h1>Choose a Server</h1>
   <p>To jam with other musicians, first you need to choose a server to connect to.</p>
   
-  <tabs>
-    <pane heading="Public">
+  <tabset>
+    <tab heading="Public">
       <accordion close-others="true">
         <!--server ng-repeat="server in publicServers" host="{{server.host}}"></server-->
         <accordion-group ng-repeat="server in publicServers" heading="{{server.host}}" ng-controller="ServerConnectForm">
-          <form class="connect-form" name="form">
-            <div>
-              <label>Username</label>
-              <input name="host" type="hidden" value="{{server.host}}" />
-              <input name="user" ng-model="data.user" type="text" value="NinjamJSUser" />
+          <form class="connect-form form-horizontal" role="form" name="form">
+            <div class="form-group">
+              <label class="col-xs-2 control-label">Username</label>
+              <div class="col-xs-10">
+                  <input name="host" type="hidden" value="{{server.host}}" />
+                  <input name="user" ng-model="data.user" type="text" value="NinjamJSUser" class="form-control" />
+              </div>
             </div>
-            <div>
-              <label>Password</label>
-              <input name="pass" ng-model="data.pass" type="text" placeholder="Blank for Anonymous" />
+            <div class="form-group">
+              <label class="col-xs-2 control-label">Password</label>
+              <div class="col-xs-10">
+                <input name="pass" ng-model="data.pass" type="text" placeholder="Blank for Anonymous" class="form-control" />
+              </div>
             </div>
-            <div>
-              <label></label>
-              <button class="btn btn-primary" ng-click="connect(server.host, form.user.$modelValue, form.pass.$modelValue)">Connect</button>
+            <div class="form-group">
+              <div class="col-xs-offset-2 col-xs-10">
+                <button class="btn btn-primary" ng-click="connect(server.host, form.user.$modelValue, form.pass.$modelValue)">Connect</button>
+              </div>
             </div>
           </form>
         </accordion-group>
       </accordion>
-    </pane>
-    <pane heading="jammr">
+    </tab>
+    <tab heading="jammr">
       <p style="margin:20px">Coming soon! Visit <a href="http://jammr.net" target="_blank">jammr.net</a> for more information and native client downloads.</p>
-    </pane>
-    <pane heading="Recent">
+    </tab>
+    <tab heading="Recent">
       <p>Nothing here yet.</p>
-    </pane>
-    <pane heading="Custom">
+    </tab>
+    <tab heading="Custom">
       <form name="form">
         <label>Server Host</label>
         <input name="host" ng-model="data.host" type="text" placeholder="e.g. ninbot.com:2049">
@@ -42,8 +47,8 @@
         <br>
         <button class="btn btn-primary" ng-click="connect(form.host.$modelValue, form.user.$modelValue, form.pass.$modelValue)">Connect</button>
       </form>
-    </pane>
-  </tabs>
+    </tab>
+  </tabset>
   
   
 </div>

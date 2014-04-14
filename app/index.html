@@ -1,38 +1,53 @@
-<!doctype html>
-<html lang="en" ng-csp="myApp">
+<!DOCTYPE html>
+<html lang="en" ng-csp ng-app="myApp">
 <head>
   <meta charset="utf-8">
-  <style>
-    [ng-cloak] {
-      display: none;
-    }
-  </style>
-  <script src="js/init.js"></script>
   <title>Ninjam JS: Music Collaboration in the Browser</title>
-  <link rel="stylesheet" href="lib/bootstrap/bootstrap.css">
+  <link rel="stylesheet" href="lib/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="lib/angular/angular-csp.css">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body ng-cloak ng-controller="AppController">
-  <div class="navbar" ng-controller="HeaderPane">
-    <div class="navbar-inner">
-      <a class="brand" href="#">Ninjam JS</a>
-      <ul class="nav">
+  <div class="navbar navbar-default navbar-fixed-top" ng-controller="HeaderPane">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Ninjam JS</a>
+    </div>
+    <div class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
         
       </ul>
-      <div class="btn-group pull-right">
-        <progress value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" class="progress-success" animate="false"></progress>
-        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" style="margin-top:-32px">
-          Settings
-          <span class="caret"></span>
-        </a>
-        <ul class="dropdown-menu">
-          <!-- dropdown menu links -->
-          <li><a href="#">Dropdown stuff</a></li>
+      <!-- Single button -->
+      <div class="btn-group navbar-right">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+          Settings <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#">Action</a></li>
+          <li><a href="#">Another action</a></li>
+          <li><a href="#">Something else here</a></li>
+          <li class="divider"></li>
+          <li><a href="#">Separated link</a></li>
         </ul>
       </div>
+      <progress animate="false" value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" type="success" class="navbar-right"></progress>
       <!--code class="pull-right">{{ninjam.status}}</code-->
     </div>
   </div>
   <ng-view></ng-view>
+
+  <!-- In production use:
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
+  -->
+  <script src="lib/angular/angular.js"></script>
+  <script src="lib/angular/angular-route.js"></script>
+  <script src="lib/sha1.js"></script>
+  <script src="lib/ui-utils-0.1.1/ui-utils.min.js"></script>
+  <script src="lib/ui-bootstrap/ui-bootstrap-custom-0.10.0.min.js"></script>
+  <script src="lib/ui-bootstrap/ui-bootstrap-custom-tpls-0.10.0.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/directives.js"></script>
 </body>
 </html>

@@ -3,8 +3,11 @@
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('AppController', function($scope, $dialog, NinjamClient) {
-    $scope.onDisconnect = function(reason) {
+  controller('AppController', function($scope, NinjamClient) {
+    var onDisconnect = function(reason) {
+      alert("Disconnected from server: " + reason);
+      $location.path('/');
+      /*
       // TODO: Show dialog
       var btns = [{label: 'Okay'}];
       var opts = {
@@ -15,15 +18,15 @@ angular.module('myApp.controllers', []).
       $dialog.messageBox("Disconnected from Server", "Reason: " + reason, btns, opts)
         .open()
         .then(function(result){
-          NinjamClient.respondToChallenge(result);
-          // Change to jam view
-          $location.path('/#jam');
+          // Change to browser view
+          $location.path('/');
       });
+      */
     };
-    NinjamClient._callbacks.onDisconnect = $scope.onDisconnect.bind($scope);
+    NinjamClient._callbacks.onDisconnect = onDisconnect.bind($scope);
   }).
   
-  controller('ServerBrowser', function($scope, $dialog, $location, NinjamClient, $store) {
+  controller('ServerBrowser', function($scope, $modal, $location, NinjamClient, $store) {
     $scope.ninjam = NinjamClient;
     
     // Dialog options
@@ -57,6 +60,20 @@ angular.module('myApp.controllers', []).
     
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
+      
+      var modalInstance = $modal.open({
+        templateUrl: "partials/modalLicenseAgreement.html"
+      });
+      modalInstance.result.then(function() {
+        // Modal was completed
+        NinjamClient.respondToChallenge(true);
+        // Change to jam view
+        $location.path('/#jam');
+      }, function() {
+        // Modal was dismissed
+        NinjamClient.respondToChallenge(false);
+      });
+      /*
       var title = 'License Agreement';
       var msg = challengeFields.licenseAgreement + '\n\nDo you agree to these terms?';
       var btns = [{result:false, label: 'No'}, {result:true, label: 'Yes', cssClass: 'btn-primary'}];
@@ -67,7 +84,7 @@ angular.module('myApp.controllers', []).
           NinjamClient.respondToChallenge(result);
           // Change to jam view
           $location.path('/#jam');
-      });
+      });*/
       
       //$scope.visible = false;
     };

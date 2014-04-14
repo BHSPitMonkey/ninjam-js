@@ -700,6 +700,8 @@ angular.module('myApp.services', []).
                     this.users[fields.username]["channels"][fields.channelIndex]["volume"] = fields.volume;
                     this.users[fields.username]["channels"][fields.channelIndex]["pan"] = fields.pan;
                     this.users[fields.username]["channels"][fields.channelIndex]["name"] = fields.channelName;
+                    this.users[fields.username]["channels"][fields.channelIndex]["localMute"] = false;
+                    this.users[fields.username]["channels"][fields.channelIndex]["localSolo"] = false;
                   }
                   else {
                     // This channel is no longer active, so remove it from the store
