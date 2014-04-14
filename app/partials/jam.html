@@ -45,5 +45,5 @@
         <span class="sender">{{message.sender}}</span>{{message.content}}
       </div>
     </div>
-    <textarea rows="2" ng-disabled="ninjam.status != 'authenticated'" ui-keypress="{13:'chatSubmit($event)'}"></textarea>
+    <textarea rows="2" class="form-control" ng-disabled="ninjam.status != 'authenticated'" ui-keypress="{13:'chatSubmit($event)'}"></textarea>
   </div>
