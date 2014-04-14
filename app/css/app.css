@@ -20,7 +20,7 @@
   margin-right: 4px;
 }
 
-/* Application */
+/* Server Browser */
 
 .serverbrowser-pane {
   padding: 50px;
@@ -34,6 +34,22 @@
 .serverbrowser-pane h1 {
   color: #666;
 }
+
+.tab-content {
+  min-width: 500px;
+  height: 400px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid #e7e7e7;
+  border-top-style: none;
+  padding: 5px;
+}
+
+.custom-server {
+  padding: 20px;
+}
+
+/* Application */
 
 .users-pane {
   position: absolute;
@@ -171,24 +187,9 @@
   background: #f0f0f0;
 }
 
-.tab-content {
-  min-width: 500px;
-  height: 400px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-top-style: none;
-  padding: 5px;
-}
-
 .accordion-group {
   border-color: #d8d8d8;
   background: #f7f7f7;
-}
-
-div[heading="Custom"] {
-  padding: 20px;
 }
 
 .server-info > div {
