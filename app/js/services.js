@@ -3,45 +3,36 @@
 /* Services */
 
 angular.module('myApp.services', []).
-  factory('NinjamClient', function($timeout) {
-    
-    // Takes in an arraybuffer and helps us sequentially get fields out of it
-    var MessageReader = function(buf) {
+  factory('MessageReader', function() {
+    function MessageReader(buf) {
       this._data = new DataView(buf);
-      this._offset = 0;          // Current offset
+      this._offset = 0; // Current offset
     }
-    angular.extend(MessageReader.prototype, {
-      
+    MessageReader.prototype = {
       nextUint8 : function() {
         this._offset++;
         return this._data.getUint8(this._offset - 1);
       },
-      
       nextUint16 : function() {
         this._offset += 2;
         return this._data.getUint16(this._offset - 2, true);
       },
-      
       nextUint32 : function() {
         this._offset += 4;
         return this._data.getUint32(this._offset - 4, true);
       },
-      
       nextInt8 : function() {
         this._offset++;
         return this._data.getInt8(this._offset - 1);
       },
-      
       nextInt16 : function() {
         this._offset += 2;
         return this._data.getInt16(this._offset - 2, true);
       },
-      
       nextInt32 : function() {
         this._offset += 4;
         return this._data.getInt32(this._offset - 4, true);
       },
-      
       // Returns the next n bytes (characters) of the message as a String.
       // If length is unspecified, we'll assume string is NUL-terminated.
       nextString : function(length) {
@@ -57,86 +48,141 @@ angular.module('myApp.services', []).
         }
         return string;
       },
-      
       // Returns the next n bytes of the message as a new ArrayBuffer object
       nextArrayBuffer : function(bytes) {
         this._offset += bytes;
         return this._data.buffer.slice(this._offset - bytes, this._offset);
       },
-      
       // Returns true if there is still more data to be retrieved from the message
       hasMoreData : function() {
         return (this._offset < this._data.byteLength);
       },
-      
       // Returns the number of bytes remaining to be read
       bytesRemaining : function() {
         return this._data.byteLength - this._offset;
       },
-
-    });
-    
-    // Builds a message by accepting fields sequentially
-    var MessageBuilder = function(length) {
+    };
+    return MessageReader;
+  }).
+  factory('MessageBuilder', function(Channel) {
+    function MessageBuilder(length) {
       this.buf = new ArrayBuffer(length);
       this._data = new DataView(this.buf);
-      this._offset = 0;          // Current offset
+      this._offset = 0; // Current offset
     }
-    angular.extend(MessageBuilder.prototype, {
-      
+    MessageBuilder.prototype = {
       appendUint8 : function(value) {
         this._data.setUint8(this._offset, value);
         this._offset++;
       },
-      
       appendUint16 : function(value) {
         this._data.setUint16(this._offset, value, true);
         this._offset += 2;
       },
-      
       appendUint32 : function(value) {
         this._data.setUint32(this._offset, value, true);
         this._offset += 4;
       },
-      
       appendInt8 : function(value) {
         this._data.setInt8(this._offset, value);
         this._offset++;
       },
-      
       appendInt16 : function(value) {
         this._data.setInt16(this._offset, value, true);
         this._offset += 2;
       },
-      
       appendInt32 : function(value) {
         this._data.setInt32(this._offset, value, true);
         this._offset += 4;
       },
-      
       appendString : function(string, length) {
         var len = (length) ? length : string.length;
-        for (var i=0; i<len; i++)
+        for (var i=0; i<len; i++) {
           this.appendUint8(string.charCodeAt(i));
-        
+        }
         // Finish with NUL if length is unspecified
         if (!length)
           this.appendUint8(0);
       },
-      
       appendZeros : function(count) {
         for (var i=0; i<count; i++) {
           this.appendUint8(0);
         }
       },
-      
       // Returns true if there is still more data to be retrieved from the message
       hasMoreData : function() {
         return (this._offset < this._data.byteLength);
       },
-
-    });
-    
+    };
+    return MessageBuilder;
+  }).
+  factory('IntervalDownload', function() {
+    function IntervalDownload(username, channelIndex) {
+      this.username = username;
+      this.channelIndex = channelIndex;
+      this.chunks = [];
+    }
+    IntervalDownload.prototype = {
+      addChunk: function(chunk) {
+        this.chunks.push(chunk);
+      },
+      // Return a fully-assembled ArrayBuffer containing the OGGv data.
+      // This IntervalDownload should be deleted after finish() returns.
+      finish: function() {
+        // Create an ArrayBuffer containing all the concatenated OGG/vorbis data
+        var totalSize = 0;
+        for (var i=0; i<this.chunks.length; i++)
+          totalSize += this.chunks[i].byteLength;
+        var fullBufferArray = new Uint8Array(totalSize);
+        var offset = 0;
+        for (var i=0; i<this.chunks.length; i++) {
+          fullBufferArray.set( new Uint8Array(this.chunks[i]), offset );
+          offset += this.chunks[i].byteLength;
+          //this.chunks[i] = null;
+        }
+        return fullBufferArray;
+      }
+    };
+    return IntervalDownload;
+  }).
+  factory('Channel', function() {
+    function Channel(name, volume, pan) {
+      this.name = name;
+      this.volume = volume;
+      this.pan = pan;
+      this.readyIntervals = [];
+      this.localMute = false;
+      this.localSolo = false;
+      this.localVolume = 0.8;
+      this.audioPlayer = null;
+    }
+    Channel.prototype = {
+      dequeueNextInterval: function() {
+        if (this.readyIntervals.length) {
+          return this.readyIntervals.shift();
+        }
+      }
+    };
+    return Channel;
+  }).
+  factory('User', function() {
+    function User(name, fullname, ip) {
+      this.name = name;
+      this.fullname = fullname;
+      this.ip = ip;
+      this.channels = {};
+    }
+    User.prototype = {
+      // Enqueue a buffer of decoded audio that is ready to play
+      addReadyInterval: function(audioBuffer, channelIndex) {
+        if (this.channels.hasOwnProperty(channelIndex)) {
+          this.channels[channelIndex].readyIntervals.push(audioBuffer);
+        }
+      }
+    };
+    return User;
+  }).
+  factory('NinjamClient', function(MessageReader, MessageBuilder, IntervalDownload, Channel, User, $timeout) {
     var NinjamClient = function() {
       // Initialize values (only the ones that need resetting after disconnect)
       this.init = function() {
@@ -313,10 +359,6 @@ angular.module('myApp.services', []).
       // Disconnect from the current server
       disconnect : function(reason) {
         console.log("Disconnecting from server.");
-        
-        if (this._callbacks.onDisconnect)
-          this._callbacks.onDisconnect(reason);
-        
         this.status = "disconnecting";
         if (this._socketPoll) {
           $timeout.cancel(this._socketPoll);
@@ -336,6 +378,8 @@ angular.module('myApp.services', []).
         this.topic = null;
         chrome.socket.disconnect(this.socketId);
         this.status = "ready";
+        if (this._callbacks.onDisconnect)
+          this._callbacks.onDisconnect(reason);
       },
       
       // Send something to server
@@ -479,6 +523,9 @@ angular.module('myApp.services', []).
         
         console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + secondsToNext);
         
+        // Play all the ready intervals
+        this._playAllChannelsNextInterval();
+        
         // Schedule metronome beeps for this interval (and the downbeat of the next)
         for (var i=0; i<this.bpi; i++) {
           var bufferSource = this._audioContext.createBufferSource();
@@ -496,49 +543,54 @@ angular.module('myApp.services', []).
             }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
         }
         
-        // Issue a "last call for audio" 1 seconds before the end of the interval
-        $timeout(function() {
-          for (var guid in this._audioIntervals) {
-            this._assembleAudioInterval(guid);
-          }
-        }.bind(this), (secondsToNext - 1) * 1000);
-        
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
       },
       
-      // Assemble the chunks for an audio interval, decode them, and schedule for playback
-      _assembleAudioInterval : function(guid) {
-        // Collect what chunks we have, and close this GUID for business
-        var chunks = this._audioIntervals[guid];
-        delete this._audioIntervals[guid];
-        
-        // Create an ArrayBuffer containing all the concatenated OGG/vorbis data
-        var totalSize = 0;
-        for (var i=0; i<chunks.length; i++)
-          totalSize += chunks[i].byteLength;
-        var fullBufferArray = new Uint8Array(totalSize);
-        var offset = 0;
-        for (var i=0; i<chunks.length; i++) {
-          fullBufferArray.set( new Uint8Array(chunks[i]), offset );
-          offset += chunks[i].byteLength;
-        } // fullBufferArray is now complete
-        //delete chunks;
-        console.log("Deleted interval queue " + guid);
-        console.log(this._audioIntervals);
-        
-        // Try to decode and then play the audio at the appropriate time
+      // Finish and enqueue a particular interval download
+      _finishIntervalDownload : function(guid) {
+        // Retrieve the data and delete the download from the queue
+        var fullBufferArray = this._audioIntervals[guid].finish();
+        var username = this._audioIntervals[guid].username;
+        var channelIndex = this._audioIntervals[guid].channelIndex;
+
+        // Try to decode and then enqueue the audio in the Channel it belongs to
         this._audioContext.decodeAudioData(fullBufferArray.buffer, function(audioBuffer) {
-          var bufferSource = this._audioContext.createBufferSource();
-          bufferSource.buffer = audioBuffer;
-          bufferSource.connect(this._audioContext.destination);
-          bufferSource.start(this._nextIntervalCtxTime);
-          console.log("Scheduling audioBuffer " + guid + " to play at time " + this._nextIntervalCtxTime + " - current time is " + this._audioContext.currentTime);
+          // Enqueue the audio in the Channel it belongs to
+          if (this.users.hasOwnProperty(username)) {
+            this.users[username].addReadyInterval(audioBuffer, channelIndex);
+          }
+          else {
+            console.log("Discarding audio data for user who seems to no longer exist");
+            console.log(username);
+            console.log(this.users);
+          }
         }.bind(this), function(error) {
           console.log("Error decoding audio data for guid: " + guid);
         }.bind(this));
+
+        // Delete the download from the queue
+        delete this._audioIntervals[guid];
       },
       
+      // Play the next ready interval (if exists) for all Channels
+      _playAllChannelsNextInterval : function() {
+        for (var name in this.users) {
+          if (this.users.hasOwnProperty(name)) {
+            for (var index in this.users[name].channels) {
+              var audioBuffer = this.users[name].channels[index].dequeueNextInterval();
+              if (audioBuffer) {
+                // Play this buffer!
+                var bufferSource = this._audioContext.createBufferSource();
+                bufferSource.buffer = audioBuffer;
+                bufferSource.connect(this._audioContext.destination);
+                bufferSource.start();
+              }
+            }
+          }
+        }
+      },
+
       // Parses an ArrayBuffer received from a Ninjam server
       _parseMessages : function(buf) {
         this._shouldPollSocket = false;
@@ -683,51 +735,53 @@ angular.module('myApp.services', []).
                   // If channel is active
                   if (fields.active == 1) {
                     if (!this.users[fields.username]) {
-                      this.users[fields.username] = {
-                        name: username,
-                        fullname: fields.username,
-                        ip: ip,
-                        channels: {}
-                      };
+                      this.users[fields.username] = new User(username, fields.username, ip);
                     }
-                    if (!this.users[fields.username]["channels"][fields.channelIndex]) {
-                      this.users[fields.username]["channels"][fields.channelIndex] = {};
+                    if (!this.users[fields.username].channels[fields.channelIndex]) {
+                      this.users[fields.username].channels[fields.channelIndex] = {};
+                      this.users[fields.username].channels[fields.channelIndex] = new Channel(fields.channelName, fields.volume, fields.pan);
                       
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)
                         this.setUsermask([fields.username]);
                     }
-                    this.users[fields.username]["channels"][fields.channelIndex]["volume"] = fields.volume;
-                    this.users[fields.username]["channels"][fields.channelIndex]["pan"] = fields.pan;
-                    this.users[fields.username]["channels"][fields.channelIndex]["name"] = fields.channelName;
-                    this.users[fields.username]["channels"][fields.channelIndex]["localMute"] = false;
-                    this.users[fields.username]["channels"][fields.channelIndex]["localSolo"] = false;
                   }
                   else {
-                    // This channel is no longer active, so remove it from the store
-                    if (this.users[fields.username])
-                      this.users[fields.username]["channels"].splice(fields.channelIndex);
+                    // This channel is no longer active, so remove it
+                    if (this.users[fields.username]) {
+                      delete this.users[fields.username].channels[fields.channelIndex];
+                    }
                   }
                 }
                 break;
               
               case 0x04:  // Server Download Interval Begin
-                console.log("Received a Server Download Interval Begin notification.");
                 var fields = {
                   guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
                   estimatedSize: msg.nextUint32(),
                   fourCC: this._arrayBufferToString(msg.nextArrayBuffer(4)),
                   channelIndex: msg.nextUint8(),
                   username: msg.nextString()
-                };                
-                console.log(fields);
+                };
+                console.log("Got new Download Interval Begin with username: " + fields.username);
                 
-                // Set up a queue for this GUID, associated with the proper user/chan
-                if (fields.fourCC == "OGGv") {
-                  this._audioIntervals[fields.guid] = [];
-                  
-                  console.log("Audio intervals:");
-                  console.log(this._audioIntervals);
+                // If this GUID is already known to us
+                if (this._audioIntervals.hasOwnProperty(fields.guid)) {
+                  // Not sure how to treat this situation
+                  console.log("[!!!] Received Download Interval Begin for known guid:");
+                  console.log(fields.guid);
+                }
+                else {
+                  if (fields.fourCC == "OGGv") {
+                    // Set up a queue for this GUID, associated with the proper user/chan
+                    this._audioIntervals[fields.guid] = new IntervalDownload(fields.username, fields.channelIndex);
+                    //console.log("Audio intervals:");
+                    //console.log(this._audioIntervals);
+                  }
+                  else {
+                    console.log("[!!!] Received Download Interval Begin with non-OGGv fourCC:");
+                    console.log(fields.fourCC);
+                  }
                 }
                 break;
               
@@ -740,17 +794,20 @@ angular.module('myApp.services', []).
                 };
                 //console.log(fields);
                 //console.log("Received a Server Download Interval Write notification. Payload size " + length + " Guid: " + fields.guid + " Flags: " + fields.flags);
-                
-                // Add this audio to the queue for this GUID.
-                if (this._audioIntervals[fields.guid]) {
-                  this._audioIntervals[fields.guid].push(fields.audioData);
-                  
+
+                // If this GUID is already known to us
+                if (this._audioIntervals.hasOwnProperty(fields.guid)) {
+                  // Push the audio data to the queue for this GUID
+                  this._audioIntervals[fields.guid].addChunk(fields.audioData);
+
                   // If flags==1, this queue is complete and may be assembled/decoded/scheduled for playback
-                  if (fields.flags == 1)
-                    this._assembleAudioInterval(fields.guid);
+                  if (fields.flags == 1) {
+                    this._finishIntervalDownload(fields.guid);
+                  }
                 }
-                else
+                else {
                   console.log("Tried pushing to guid queue " + fields.guid + " but it's not there!");
+                }
                 break;
               
               case 0xc0:  // Chat Message
@@ -776,12 +833,7 @@ angular.module('myApp.services', []).
                     var pieces = fields.arg1.split('@', 2);
                     var username = pieces[0];
                     var ip = (pieces.length == 2) ? pieces[1] : "";
-                    this.users[fields.arg1] = {
-                      name: username,
-                      fullname: fields.arg1,
-                      ip: ip,
-                      channels: {}
-                    };
+                    this.users[fields.arg1] = new User(username, fields.arg1, ip);
                     break;
                   case "PART":
                     delete this.users[fields.arg1];

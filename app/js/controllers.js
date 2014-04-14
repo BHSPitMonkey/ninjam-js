@@ -3,7 +3,7 @@
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('AppController', function($scope, NinjamClient) {
+  controller('AppController', function($scope, $location, NinjamClient) {
     var onDisconnect = function(reason) {
       alert("Disconnected from server: " + reason);
       $location.path('/');
