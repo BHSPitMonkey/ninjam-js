@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   width="16"
+   height="16"
+   sodipodi:docname="ic_metronome_white.svg"
+   inkscape:export-filename="/home/stephen/Android/NinjamForAndroid/mdpi/ic_metronome_flattened.png"
+   inkscape:export-xdpi="45"
+   inkscape:export-ydpi="45">
+  <metadata
+     id="metadata8">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs6" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1021"
+     id="namedview4"
+     showgrid="false"
+     inkscape:zoom="1"
+     inkscape:cx="-28.793663"
+     inkscape:cy="19.669357"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <path
+     style="fill:#ffffff;fill-opacity:1;stroke:none"
+     d="M 6.1033123,0 5.5629151,2.1933769 a 0.99648273,0.99648273 0 0 1 0.7841064,0.6781459 l 0.052979,0.1907294 a 0.99648273,0.99648273 0 0 1 0.3072838,0 l 0.2649016,-1.303312 2.0450325,0 2.1298016,10.5642388 -1.8119202,0 -1.049007,0 L 6.4741726,6.5801318 6.8450337,6.4635755 6.5695363,4.0370861 5.7536427,4.2913911 5.403974,3.1788075 4.1960267,3.5602654 4.5456954,4.672848 3.7403975,4.927152 4.9059608,7.0781459 5.276822,6.9615887 l 1.6953637,5.3615903 -1.049007,0 -1.0701986,0 L 5.2662253,10.256954 4.5562911,8.0105958 A 0.99648273,0.99648273 0 0 1 4.1854309,7.7562908 L 2.1403975,16 13.859603,16 9.896688,0 6.1033114,0 z"
+     id="path3112"
+     inkscape:connector-curvature="0" />
+</svg>
