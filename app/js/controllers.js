@@ -31,7 +31,7 @@ angular.module('myApp.controllers', []).
   
   controller('ServerBrowser', function($scope, $modal, $location, NinjamClient, $store) {
     $scope.ninjam = NinjamClient;
-    
+
     // Dialog options
     $scope.opts = {
       backdrop: true,
@@ -40,27 +40,29 @@ angular.module('myApp.controllers', []).
       keyboard: false,
       backdropClick: false,
     };
-    
+
     // TODO: Blank these defaults
     //$scope.defaultUsername = "NinjamJSUser";
     //$scope.lastUsedUsername = $store.get("lastUsedUsername");
-    
+
     $scope.publicServers = [
-      { host: "ninbot.com:2049" },
-      { host: "ninbot.com:2050" },
-      { host: "ninbot.com:2051" },
-      { host: "ninbot.com:2052" },
-      { host: "ninjamer.com:2049" },
-      { host: "ninjamer.com:2050" },
-      { host: "ninjamer.com:2051" },
-      { host: "ninjamer.com:2052" },
+      { host: "ninjamer.com:2049", locale: "FR" },
+      { host: "ninjamer.com:2050", locale: "FR" },
+      { host: "ninjamer.com:2051", locale: "FR" },
+      { host: "ninjamer.com:2052", locale: "FR" },
+      { host: "ninbot.com:2049", locale: "US" },
+      { host: "ninbot.com:2050", locale: "US" },
+      { host: "ninbot.com:2051", locale: "US" },
+      { host: "ninbot.com:2052", locale: "US" },
+      { host: "virtualliveband.de:2051", locale: "DE" },
+      { host: "mutantlab.com:2049", locale: "US" },
     ];
-    
+
     // Returns the default username to use for a given host
     $scope.defaultUsername = function(host) {
       return 'NinjamJSUser';
     };
-    
+
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
       

@@ -5,8 +5,7 @@
   <tabset>
     <tab heading="Public">
       <accordion close-others="true">
-        <!--server ng-repeat="server in publicServers" host="{{server.host}}"></server-->
-        <accordion-group ng-repeat="server in publicServers" heading="{{server.host}}" ng-controller="ServerConnectForm">
+        <accordion-group ng-repeat="server in publicServers" heading="{{server.host}} ({{server.locale}})" ng-controller="ServerConnectForm">
           <form class="connect-form form-horizontal" role="form" name="form">
             <div class="form-group">
               <label class="col-xs-2 control-label">Username</label>
