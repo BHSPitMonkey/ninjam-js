@@ -17,6 +17,7 @@
       "tcp-connect"
     ]},
     "notifications",
-    "storage"
+    "storage",
+    "audioCapture"
   ]
 }

@@ -3,27 +3,30 @@
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('AppController', function($scope, $location, NinjamClient) {
-    var onDisconnect = function(reason) {
-      alert("Disconnected from server: " + reason);
+  config(['$tooltipProvider', function ($tooltipProvider) {
+    $tooltipProvider.options({
+      placement: 'bottom',
+      appendToBody: true
+    });
+  }]).
+  controller('AppController', function($scope, $modal, $location, NinjamClient) {
+    this.onDisconnect = function(reason) {
+      if (reason && reason.length) {
+        var modalScope = $scope.$new();
+        modalScope.details = reason;
+        var modalInstance = $modal.open({
+          templateUrl: "partials/modalDisconnectedDialog.html",
+          scope: modalScope
+        });
+        modalInstance.result.then(function() {
+          // Modal was completed
+        }, function() {
+          // Modal was dismissed
+        });
+      }
       $location.path('/');
-      /*
-      // TODO: Show dialog
-      var btns = [{label: 'Okay'}];
-      var opts = {
-        backdrop: true,
-        backdropFade: true,
-        dialogFade: true,
-      };
-      $dialog.messageBox("Disconnected from Server", "Reason: " + reason, btns, opts)
-        .open()
-        .then(function(result){
-          // Change to browser view
-          $location.path('/');
-      });
-      */
     };
-    NinjamClient._callbacks.onDisconnect = onDisconnect.bind($scope);
+    NinjamClient._callbacks.onDisconnect = this.onDisconnect.bind($scope);
   }).
   
   controller('ServerBrowser', function($scope, $modal, $location, NinjamClient, $store) {
@@ -73,18 +76,6 @@ angular.module('myApp.controllers', []).
         // Modal was dismissed
         NinjamClient.respondToChallenge(false);
       });
-      /*
-      var title = 'License Agreement';
-      var msg = challengeFields.licenseAgreement + '\n\nDo you agree to these terms?';
-      var btns = [{result:false, label: 'No'}, {result:true, label: 'Yes', cssClass: 'btn-primary'}];
-
-      $dialog.messageBox(title, msg, btns, $scope.opts)
-        .open()
-        .then(function(result){
-          NinjamClient.respondToChallenge(result);
-          // Change to jam view
-          $location.path('/#jam');
-      });*/
       
       //$scope.visible = false;
     };
@@ -122,6 +113,8 @@ angular.module('myApp.controllers', []).
     }
     
     $scope.onChatMessage = function(messageFields) {
+      // Check if messagesDiv is scrolled down the maximum amount
+      // TODO
       switch (messageFields.command) {
         case "MSG":
           $scope.messages.push({
@@ -168,6 +161,8 @@ angular.module('myApp.controllers', []).
           });
           break;
       }
+      // Scroll to bottom if necessary
+      $scope.messagesDiv.scrollTop = $scope.messagesDiv.scrollHeight;
     };
     NinjamClient._callbacks.onChatMessage = $scope.onChatMessage.bind($scope);
   }).

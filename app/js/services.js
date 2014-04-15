@@ -154,12 +154,19 @@ angular.module('myApp.services', []).
       this.localMute = false;
       this.localSolo = false;
       this.localVolume = 0.8;
-      this.audioPlayer = null;
+      this.gainNode = null;
     }
     Channel.prototype = {
-      dequeueNextInterval: function() {
-        if (this.readyIntervals.length) {
-          return this.readyIntervals.shift();
+      playNextInterval: function() {
+        if (gainNode && this.readyIntervals.length) {
+          var audioBuffer = this.readyIntervals.shift();
+          if (audioBuffer) {
+            // Play this buffer!
+            var bufferSource = this.gainNode.context.createBufferSource();
+            bufferSource.buffer = audioBuffer;
+            bufferSource.connect(this.gainNode);
+            bufferSource.start();
+          }
         }
       }
     };
@@ -184,40 +191,12 @@ angular.module('myApp.services', []).
   }).
   factory('NinjamClient', function(MessageReader, MessageBuilder, IntervalDownload, Channel, User, $timeout) {
     var NinjamClient = function() {
-      // Initialize values (only the ones that need resetting after disconnect)
-      this.init = function() {
-        this.socketId = null;
-        this.status = "starting";   // Indicates connection status, for debugging
-        this.host = null;
-        this.port = null;
-        this.username = null;
-        this.password = null;
-        this.anonymous = true;      // TODO: initialize as null and allow non-anon mode
-        this.users = {};
-        this.bpm = null;            // Beats per minute (tempo)
-        this.bpi = null;            // Beats per interval (phrase length)
-        this.currentBeat = null;
-        this.maxChannels = null;    // Max channels per user allowed by server
-        this.topic = null;
-        this.autosubscribe = true; // Currently breaks us because we are bad at sockets
-        
-        this._localChannels = [{name:"Listening Only"}];
-        
-        this._socketPoll = null;    // setTimeout handle for continuous socket reads
-        this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
-        this._callbacks = {
-          onChallenge: null,
-          onChatMessage: null,
-          onDisconnect: null
-        };
-        this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
-        this._lastSendTime = null;      // Time of last socket write
-        this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
-        this._audioContext = new webkitAudioContext();
-        this._nextIntervalBegin = null; // setTimeout handle for local interval setup
-        this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
-      };
-      this.init();
+      // Set up audio playback context
+      this._audioContext = new webkitAudioContext();
+      this._masterGain = this._audioContext.createGain();
+      this._masterGain.connect(this._audioContext.destination);
+      this._metronomeGain = this._audioContext.createGain();
+      this._metronomeGain.connect(this._masterGain);
       
       // Set up metronome sounds
       this._hiClickBuffer = null;
@@ -248,11 +227,47 @@ angular.module('myApp.services', []).
         );
       }.bind(this);
       requestHi.send();
-      // TODO
       
       // Try to create the socket
       console.log("Trying to create socket...");
       chrome.socket.create('tcp', {}, this._onCreate.bind(this));
+
+      // Initialize values (only the ones that need resetting after disconnect)
+      this.reset = function() {
+        this.socketId = null;
+        this.status = "starting";   // Indicates connection status, for debugging
+        this.host = null;
+        this.port = null;
+        this.username = null;
+        this.password = null;
+        this.anonymous = true;      // TODO: initialize as null and allow non-anon mode
+        this.users = {};
+        this.bpm = null;            // Beats per minute (tempo)
+        this.bpi = null;            // Beats per interval (phrase length)
+        this.currentBeat = null;
+        this.maxChannels = null;    // Max channels per user allowed by server
+        this.topic = null;
+        this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
+        this.setMasterMute(false);
+        this.setMetronomeMute(false);
+        this.setMicrophoneMute(false);
+        
+        this._localChannels = [{name:"Default"}];
+        
+        this._socketPoll = null;    // setTimeout handle for continuous socket reads
+        this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
+        this._callbacks = {
+          onChallenge: null,
+          onChatMessage: null,
+          onDisconnect: null
+        };
+        this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
+        this._lastSendTime = null;      // Time of last socket write
+        this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
+        this._nextIntervalBegin = null; // setTimeout handle for local interval setup
+        this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
+      };
+      this.reset();
     };
     
     angular.extend(NinjamClient.prototype, {
@@ -342,14 +357,13 @@ angular.module('myApp.services', []).
         for (var i=0; i<this._localChannels.length; i++) {
           allNamesLength += (this._localChannels[i].name.length + 1); // +1 for NUL char
         }
-        //var channelName = "Listening Only";
         var msg = new MessageBuilder(2 + allNamesLength + (4 * this._localChannels.length));
         msg.appendUint16(4);  // Channel parameter size
         for (var i=0; i<this._localChannels.length; i++) {
           msg.appendString(this._localChannels[i].name);  // Channel name
-          msg.appendInt16(-1000);         // Volume (-100dB)
-          msg.appendInt8(0);              // Pan
-          msg.appendUint8(1);             // Flags (???)
+          msg.appendInt16(0);         // Volume (0dB)
+          msg.appendInt8(0);          // Pan
+          msg.appendUint8(1);         // Flags (???)
           //msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
         }
         
@@ -380,6 +394,32 @@ angular.module('myApp.services', []).
         this.status = "ready";
         if (this._callbacks.onDisconnect)
           this._callbacks.onDisconnect(reason);
+      },
+
+      setMasterMute : function(state) {
+        this.masterMute = state;
+        this._masterGain.gain.value = (this.masterMute) ? 0.0 : 1.0;
+      },
+      
+      toggleMasterMute : function() {
+        this.setMasterMute(!this.masterMute);
+      },
+
+      setMetronomeMute : function(state) {
+        this.metronomeMute = state;
+        this._metronomeGain.gain.value = (this.metronomeMute) ? 0.0 : 1.0;
+      },
+      
+      toggleMetronomeMute : function() {
+        this.setMetronomeMute(!this.metronomeMute);
+      },
+      
+      setMicrophoneMute : function(state) {
+        this.microphoneMute = state;
+      },
+      
+      toggleMicrophoneMute : function() {
+        this.setMicrophoneMute(!this.microphoneMute);
       },
       
       // Send something to server
@@ -531,7 +571,7 @@ angular.module('myApp.services', []).
           var bufferSource = this._audioContext.createBufferSource();
           var clickTime = this._currentIntervalCtxTime + (secondsPerBeat * i);
           bufferSource.buffer = (i == 0) ? this._hiClickBuffer : this._loClickBuffer;
-          bufferSource.connect(this._audioContext.destination);
+          bufferSource.connect(this._metronomeGain);
           bufferSource.start(clickTime);
           
           // Update the currentBeat property at these times as well
@@ -543,6 +583,12 @@ angular.module('myApp.services', []).
             }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
         }
         
+        // End previous recording
+        // TODO
+
+        // Start new recording
+        // TODO
+
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
       },
@@ -578,14 +624,7 @@ angular.module('myApp.services', []).
         for (var name in this.users) {
           if (this.users.hasOwnProperty(name)) {
             for (var index in this.users[name].channels) {
-              var audioBuffer = this.users[name].channels[index].dequeueNextInterval();
-              if (audioBuffer) {
-                // Play this buffer!
-                var bufferSource = this._audioContext.createBufferSource();
-                bufferSource.buffer = audioBuffer;
-                bufferSource.connect(this._audioContext.destination);
-                bufferSource.start();
-              }
+              this.users[name].channels[index].playNextInterval();
             }
           }
         }
@@ -738,8 +777,9 @@ angular.module('myApp.services', []).
                       this.users[fields.username] = new User(username, fields.username, ip);
                     }
                     if (!this.users[fields.username].channels[fields.channelIndex]) {
-                      this.users[fields.username].channels[fields.channelIndex] = {};
-                      this.users[fields.username].channels[fields.channelIndex] = new Channel(fields.channelName, fields.volume, fields.pan);
+                      var channel = new Channel(fields.channelName, fields.volume, fields.pan);
+                      channel.gainNode.connect(this._masterGain);
+                      this.users[fields.username].channels[fields.channelIndex] = channel;
                       
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)

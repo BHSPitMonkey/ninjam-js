@@ -1,6 +1,23 @@
   <div class="users-pane" ng-controller="UsersPane">
     <h2>Users and Channels</h2>
     <div class="users">
+      <div class="panel panel-primary user">
+        <div class="panel-heading user-titlebar">
+          <span class="user-ip">(You)</span>
+          <span class="user-title">{{ninjam.username}}</span>
+        </div>
+        <div class="panel-body">
+          <div class="channels">
+            <div ng-repeat="channel in ninjam._localChannels" class="channel">
+              <div class="btn-group">
+                <button class="btn btn-default" disabled>-</button>
+                <button class="btn btn-default" disabled>-</button>
+                <button class="btn btn-default" disabled>{{ channel.name }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div ng-repeat="user in ninjam.users" class="panel panel-default user">
         <div class="panel-heading user-titlebar">
           <span class="user-ip">{{user.ip}}</span>
@@ -40,7 +57,7 @@
   
   <div class="sidebar" ng-controller="ChatPane">
     <h2>Chat</h2>
-    <div class="messages" id="messages">
+    <div class="messages panel" id="messages">
       <div ng-repeat="message in messages" class="message {{message.type}}">
         <span class="sender">{{message.sender}}</span>{{message.content}}
       </div>

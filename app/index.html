@@ -19,9 +19,9 @@
       <span ng-show="ninjam.status=='authenticated'">
         <!-- Dropdown Button -->
         <div class="btn-group navbar-right">
-          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.metronomeMute]" ng-click="ninjam.toggleMetronomeMute()"><img src="img/ic_metronome_black.svg"></button>
-          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.microphoneMute]" ng-click="ninjam.toggleMicrophoneMute()"><img src="img/ic_mic_mute_black.svg"></button>
-          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.masterMute]" ng-click="ninjam.toggleMasterMute()"><img src="img/ic_speaker_mute_black.svg" width="16"></button>
+          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.metronomeMute]" ng-click="ninjam.toggleMetronomeMute()" tooltip="Mute Metronome"><img src="img/ic_metronome_black.svg"></button>
+          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.microphoneMute]" ng-click="ninjam.toggleMicrophoneMute()" tooltip="Mute Microphone"><img src="img/ic_mic_mute_black.svg"></button>
+          <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[ninjam.masterMute]" ng-click="ninjam.toggleMasterMute()" tooltip="Mute All Sounds"><img src="img/ic_speaker_mute_black.svg" width="16"></button>
           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             <img src="img/ic_more_black.svg"> <span class="caret"></span>
           </button>

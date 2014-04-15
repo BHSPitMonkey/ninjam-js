@@ -7,6 +7,10 @@
   background: none;
 } */
 
+body {
+  padding-top: 54px;
+}
+
 /* Navbar */
 
 .navbar-right.progress {
@@ -23,12 +27,7 @@
 /* Server Browser */
 
 .serverbrowser-pane {
-  padding: 50px;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  top: 42px;
-  right: 0;
+  padding: 20px 50px;
 }
 
 .serverbrowser-pane h1 {
@@ -132,6 +131,7 @@
   border: 1px solid #ddd;
   overflow-x: hidden;
   overflow-y: auto;
+  margin-bottom: 0;
 }
 
 .message {
