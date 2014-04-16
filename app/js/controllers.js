@@ -110,8 +110,14 @@ angular.module('myApp.controllers', []).
     // Called when ENTER is pressed inside textarea
     $scope.chatSubmit = function($event) {
       $event.preventDefault();
-      NinjamClient.submitChatMessage($event.target.value);
+      var message = $event.target.value;
       $event.target.value = "";
+      NinjamClient.submitChatMessage(message);
+      $scope.messages.push({
+        type: "msg",
+        sender: $scope.ninjam.username,
+        content: message
+      });
     }
     
     $scope.onChatMessage = function(messageFields) {
@@ -119,11 +125,13 @@ angular.module('myApp.controllers', []).
       // TODO
       switch (messageFields.command) {
         case "MSG":
-          $scope.messages.push({
-            type: "msg",
-            sender: messageFields.arg1,
-            content: messageFields.arg2
-          });
+          if (messageFields.arg1 != $scope.ninjam.fullUsername) {
+            $scope.messages.push({
+              type: "msg",
+              sender: messageFields.arg1,
+              content: messageFields.arg2
+            });
+          }
           break;
         case "PRIVMSG":
           $scope.messages.push({

@@ -239,6 +239,7 @@ angular.module('myApp.services', []).
         this.host = null;
         this.port = null;
         this.username = null;
+        this.fullUsername = null;   // Server will tell us this after auth reply
         this.password = null;
         this.anonymous = true;      // TODO: initialize as null and allow non-anon mode
         this.users = {};
@@ -725,6 +726,7 @@ angular.module('myApp.services', []).
                   this.status = "authenticated";
                   this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
                   this.setChannelInfo();
+                  this.fullUsername = fields.error;
                 }
                 break;
               
@@ -773,17 +775,26 @@ angular.module('myApp.services', []).
                   
                   // If channel is active
                   if (fields.active == 1) {
+                    console.log("Sensing a new active channel...");
                     if (!this.users[fields.username]) {
+                      console.log("User not already known, creating...");
                       this.users[fields.username] = new User(username, fields.username, ip);
                     }
+                    console.log(this.users);
                     if (!this.users[fields.username].channels[fields.channelIndex]) {
+                      console.log("Channel index not already known, creating...");
                       var channel = new Channel(fields.channelName, fields.volume, fields.pan);
                       channel.gainNode.connect(this._masterGain);
                       this.users[fields.username].channels[fields.channelIndex] = channel;
+                      console.log(this.users[fields.username].channels);
                       
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)
                         this.setUsermask([fields.username]);
+                    }
+                    else {
+                      console.log("Channel already known. Updating...");
+                      this.users[fields.username].channels[fields.channelIndex].update(fields.channelName, fields.volume, fields.pan);
                     }
                   }
                   else {
