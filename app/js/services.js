@@ -157,8 +157,13 @@ angular.module('myApp.services', []).
       this.gainNode = null;
     }
     Channel.prototype = {
+      update: function(name, volume, pan) {
+        this.name = name;
+        this.volume = volume;
+        this.pan = pan;
+      },
       playNextInterval: function() {
-        if (gainNode && this.readyIntervals.length) {
+        if (this.gainNode && this.readyIntervals.length) {
           var audioBuffer = this.readyIntervals.shift();
           if (audioBuffer) {
             // Play this buffer!
@@ -767,31 +772,34 @@ angular.module('myApp.services', []).
                     username: msg.nextString(),
                     channelName: msg.nextString()
                   };
-                  console.log(fields);
                   
                   var pieces = fields.username.split('@', 2);
                   var username = pieces[0];
                   var ip = (pieces.length == 2) ? pieces[1] : "";
-                  
+
+                  // Create user if necessary
+                  if (!this.users[fields.username]) {
+                    console.log("User not already known, creating...");
+                    this.users[fields.username] = new User(username, fields.username, ip);
+                  }
+                  var user = this.users[fields.username];
+
                   // If channel is active
                   if (fields.active == 1) {
-                    console.log("Sensing a new active channel...");
-                    if (!this.users[fields.username]) {
-                      console.log("User not already known, creating...");
-                      this.users[fields.username] = new User(username, fields.username, ip);
-                    }
-                    console.log(this.users);
-                    if (!this.users[fields.username].channels[fields.channelIndex]) {
+                    // Create channel if necessary
+                    if (!user.channels[fields.channelIndex]) {
                       console.log("Channel index not already known, creating...");
                       var channel = new Channel(fields.channelName, fields.volume, fields.pan);
+                      console.log(channel);
+                      channel.gainNode = this._audioContext.createGain();
                       channel.gainNode.connect(this._masterGain);
-                      this.users[fields.username].channels[fields.channelIndex] = channel;
-                      console.log(this.users[fields.username].channels);
+                      user.channels[fields.channelIndex] = channel;
                       
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)
                         this.setUsermask([fields.username]);
                     }
+                    // Otherwise just update existing channel
                     else {
                       console.log("Channel already known. Updating...");
                       this.users[fields.username].channels[fields.channelIndex].update(fields.channelName, fields.volume, fields.pan);
@@ -799,7 +807,8 @@ angular.module('myApp.services', []).
                   }
                   else {
                     // This channel is no longer active, so remove it
-                    if (this.users[fields.username]) {
+                    if (user) {
+                      console.log("Deleting now-inactive channel");
                       delete this.users[fields.username].channels[fields.channelIndex];
                     }
                   }
