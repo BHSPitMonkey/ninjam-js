@@ -252,7 +252,7 @@ angular.module('myApp.services', []).
 
       // Initialize values (only the ones that need resetting after disconnect)
       this.reset = function() {
-        this.debug = false;          // Causes debug pane to appear in UI
+        this.debug = false;         // Causes debug pane to appear in UI
         this.socketId = null;
         this.status = "starting";   // Indicates connection status, for debugging
         this.host = null;
@@ -496,7 +496,7 @@ angular.module('myApp.services', []).
             if (this._shouldPollSocket)
               chrome.socket.read(this.socketId, null, this._onDataRead.bind(this));
             
-            this._socketPoll = $timeout(poll.bind(this), 500);
+            this._socketPoll = $timeout(poll.bind(this), 0); // Tight loop!
           }.bind(this), 0);
         }
       },

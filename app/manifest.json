@@ -1,17 +1,20 @@
 {
-  "name": "Ninjam JS",
-  "description": "A Ninjam client written in JavaScript.",
-  "version": "0.1.1",
-  "manifest_version": 2,
   "app": {
     "background": {
       "scripts": ["background.js"]
     }
   },
+  "manifest_version": 2,
+  "name": "Ninjam JS",
+  "version": "0.2",
+
+  "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
   "icons": {
     "16": "img/icon-16.png",
     "128": "img/icon-128.png"
   },
+
+  "author": "Stephen Eisenhauer",
   "permissions": [
     {"socket": [
       "tcp-connect"
