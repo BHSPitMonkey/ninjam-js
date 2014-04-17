@@ -146,7 +146,7 @@ angular.module('myApp.services', []).
     return IntervalDownload;
   }).
   factory('Channel', function() {
-    function Channel(name, volume, pan) {
+    function Channel(name, volume, pan, outputNode) {
       this.name = name;
       this.volume = volume;
       this.pan = pan;
@@ -154,7 +154,12 @@ angular.module('myApp.services', []).
       this.localMute = false;
       this.localSolo = false;
       this.localVolume = 0.8;
-      this.gainNode = null;
+      this.analyser = outputNode.context.createAnalyser();
+      this.analyser.fftSize = 32;
+      this.analyser.connect(outputNode);
+      this.gainNode = outputNode.context.createGain();
+      this.gainNode.connect(this.analyser);
+      this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
     }
     Channel.prototype = {
       update: function(name, volume, pan) {
@@ -173,6 +178,14 @@ angular.module('myApp.services', []).
             bufferSource.start();
           }
         }
+      },
+      toggleMute: function() {
+        // TODO
+      },
+      getSimpleOutputLevel: function() {
+        this.analyser.getByteFrequencyData(this.frequencyData);
+        console.log(this.frequencyData); // TODO: Get average
+        return this.frequencyData[0]; // TODO: Get average
       }
     };
     return Channel;
@@ -239,7 +252,7 @@ angular.module('myApp.services', []).
 
       // Initialize values (only the ones that need resetting after disconnect)
       this.reset = function() {
-        this.debug = false          // Causes debug pane to appear in UI
+        this.debug = false;          // Causes debug pane to appear in UI
         this.socketId = null;
         this.status = "starting";   // Indicates connection status, for debugging
         this.host = null;
@@ -790,10 +803,8 @@ angular.module('myApp.services', []).
                     // Create channel if necessary
                     if (!user.channels[fields.channelIndex]) {
                       console.log("Channel index not already known, creating...");
-                      var channel = new Channel(fields.channelName, fields.volume, fields.pan);
+                      var channel = new Channel(fields.channelName, fields.volume, fields.pan, this._masterGain);
                       console.log(channel);
-                      channel.gainNode = this._audioContext.createGain();
-                      channel.gainNode.connect(this._masterGain);
                       user.channels[fields.channelIndex] = channel;
                       
                       // Subscribe to this channel, since we just met it
