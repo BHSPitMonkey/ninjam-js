@@ -260,7 +260,7 @@ angular.module('myApp.services', []).
         
         this._localChannels = [{name:"Default"}];
         
-        this._socketPoll = null;    // setTimeout handle for continuous socket reads
+        this._socketPoll = null;        // setTimeout handle for continuous socket reads
         this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
         this._callbacks = {
           onChallenge: null,

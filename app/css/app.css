@@ -173,7 +173,7 @@ body {
   top: 0;
   left: 0;
   font-size: 9px;
-  background: white;
+  background: rgba(255, 255, 255, 0.8);
   color: black;
   border: 2px solid black;
   z-index: 9999;

@@ -41,7 +41,10 @@
   <ng-view></ng-view>
 
   <div class="debug" ng-controller="DebugPane">
-    <p>NinjamClient status: {{ninjam.status}}</p>
+    <p>status: {{ninjam.status}}</p>
+    <p>host: {{ninjam.host}}</p>
+    <p>port: {{ninjam.port}}</p>
+    <p>username: {{ninjam.username}}</p>
   </div>
 
   <!-- In production use:
