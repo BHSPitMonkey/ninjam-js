@@ -179,4 +179,8 @@ angular.module('myApp.controllers', []).
   
   controller('UsersPane', function($scope, NinjamClient) {
     $scope.ninjam = NinjamClient;
+  }).
+
+  controller('DebugPane', function($scope, NinjamClient) {
+    $scope.ninjam = NinjamClient;
   });

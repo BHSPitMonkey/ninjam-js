@@ -167,6 +167,22 @@ body {
   margin-bottom: 0;
 }
 
+.debug {
+  display: inline-block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  font-size: 9px;
+  background: white;
+  color: black;
+  border: 2px solid black;
+  z-index: 9999;
+}
+
+.debug p {
+  margin-bottom: 0;
+}
+
 /*
 .navbar {
   margin-bottom: 0;
