@@ -235,7 +235,7 @@ angular.module('myApp.services', []).
       
       // Try to create the socket
       console.log("Trying to create socket...");
-      chrome.socket.create('tcp', {}, this._onCreate.bind(this));
+      chrome.sockets.tcp.create({}, this._onCreate.bind(this));
 
       // Initialize values (only the ones that need resetting after disconnect)
       this.reset = function() {
@@ -307,7 +307,7 @@ angular.module('myApp.services', []).
             throw "Invalid host format"
           }
           
-          chrome.socket.connect(this.socketId, this.host, this.port, this._onConnectComplete.bind(this));
+          chrome.sockets.connect(this.socketId, this.host, this.port, this._onConnectComplete.bind(this));
           
           this.status = "connecting";
         }
@@ -396,7 +396,7 @@ angular.module('myApp.services', []).
         this.bpm = null;
         this.bpi = null;
         this.topic = null;
-        chrome.socket.disconnect(this.socketId);
+        chrome.sockets.tcp.disconnect(this.socketId);
         this.status = "ready";
         if (this._callbacks.onDisconnect)
           this._callbacks.onDisconnect(reason);
@@ -478,29 +478,19 @@ angular.module('myApp.services', []).
         
         if (result >= 0) {
           // We are connected; Begin polling for new information
-          this._socketPoll = $timeout(function poll() {
-            if (this._shouldPollSocket)
-              chrome.socket.read(this.socketId, null, this._onDataRead.bind(this));
-            
-            this._socketPoll = $timeout(poll.bind(this), 500);
-          }.bind(this), 0);
+          chrome.sockets.tcp.onReceive.addListener(this._onReceiveData.bind(this));
+          chrome.sockets.tcp.onReceiveError.addListener(this._onReceiveError.bind(this));
         }
       },
       
       // Called when data has been read from the socket
-      _onDataRead : function(readInfo) {
-        if (readInfo.resultCode > 0) {
-          //console.log('Data has been read from the socket.');
-          
-          // Convert ArrayBuffer to string and log it
-          //this._arrayBufferToString(readInfo.data, function(str) {
-          //  console.log("Received (string):\n" + str);
-          //}.bind(this));
-          
-          // Parse the received data
-          this._parseMessages(readInfo.data);
-        }
-        else if (readInfo.resultCode == -15)
+      _onReceiveData : function(info) {
+        // Parse the received data
+        this._parseMessages(info.data);
+      },
+
+      _onReceiveError : function(info) {
+        if (info.resultCode == -15)
         {
           console.log("Socket is no longer connected!");
           this.disconnect("Socket became disconnected.");
@@ -510,12 +500,18 @@ angular.module('myApp.services', []).
           console.log("Socket read failed:");
           console.log(readInfo);
         }
+        else {
+          console.log("Something wrong with socket! resultCode: " + info.resultCode);
+        }
       },
       
-      // Called when a write operation completes (or has an error)
-      _onDataWrite : function(writeInfo) {
+      // Called when a send operation completes (or has an error)
+      _onDataSend : function(sendInfo) {
         //console.log("Socket write completed: ")
         //console.log(writeInfo);
+        if (sendInfo < 0) {
+          console.log("Error writing to socket! resultCode: " + sendInfo.resultCode);
+        }
       },
       
       // Converts an array buffer to a string asynchronously
@@ -951,7 +947,7 @@ angular.module('myApp.services', []).
         }
         console.log(str); */
         
-        chrome.socket.write(this.socketId, buf, this._onDataWrite.bind(this));
+        chrome.sockets.tcp.send(this.socketId, buf, this._onDataSend.bind(this));
         this._lastSendTime = (new Date()).getTime();
       },
       
