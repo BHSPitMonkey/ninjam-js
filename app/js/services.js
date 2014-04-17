@@ -239,6 +239,7 @@ angular.module('myApp.services', []).
 
       // Initialize values (only the ones that need resetting after disconnect)
       this.reset = function() {
+        this.debug = false          // Causes debug pane to appear in UI
         this.socketId = null;
         this.status = "starting";   // Indicates connection status, for debugging
         this.host = null;
