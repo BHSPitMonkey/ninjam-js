@@ -21,6 +21,7 @@
     ]},
     "notifications",
     "storage",
-    "audioCapture"
+    "audioCapture",
+    "http://autosong.ninjam.com/*"
   ]
 }
