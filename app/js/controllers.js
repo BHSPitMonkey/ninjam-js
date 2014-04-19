@@ -29,7 +29,7 @@ angular.module('myApp.controllers', []).
     NinjamClient._callbacks.onDisconnect = this.onDisconnect.bind($scope);
   }).
   
-  controller('ServerBrowser', function($scope, $modal, $location, NinjamClient, $store) {
+  controller('ServerBrowser', function($scope, $modal, $location, $http, NinjamClient, $store) {
     $scope.ninjam = NinjamClient;
 
     // Dialog options
@@ -58,6 +58,43 @@ angular.module('myApp.controllers', []).
       { host: "mutantlab.com:2049", locale: "US" },
     ];
 
+    // Loads the current public server status from ninjam.com
+    $scope.refreshPublicServerList = function() {
+      var url = "http://autosong.ninjam.com/serverlist.php";
+      $http.get(url).
+        success(function(data, status, headers, config) {
+          // Parse the server list
+          if (data.substring(0, 6) != "SERVER") {
+            console.log("Invalid server list from ninjam.com");
+            return;
+          }
+          $scope.publicServers = [];
+          var lines = data.split("\n");
+          var pattern = /SERVER "(.*)" "(.*)" "(.*)"/;
+          lines.forEach(function(line) {
+            var match = line.match(pattern);
+            if (match != null) {
+              var userinfo = match[3].split(":", 2);
+              var users = [];
+              if (userinfo[0] != "0") {
+                users = userinfo[1].split(",");
+              }
+              var server = {
+                host: match[1],
+                status: match[2],
+                userCount: userinfo[0],
+                users: users
+              };
+              $scope.publicServers.push(server);
+            }
+          });
+        }).
+        error(function(data, status, headers, config) {
+          console.log("Error downloading public server list: " + status);
+        });
+    };
+    $scope.refreshPublicServerList();
+
     // Returns the default username to use for a given host
     $scope.defaultUsername = function(host) {
       return 'NinjamJSUser';
@@ -66,8 +103,11 @@ angular.module('myApp.controllers', []).
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
       
+      var modalScope = $scope.$new();
+      modalScope.agreement = challengeFields.licenseAgreement;
       var modalInstance = $modal.open({
-        templateUrl: "partials/modalLicenseAgreement.html"
+        templateUrl: "partials/modalLicenseAgreement.html",
+        scope: modalScope
       });
       modalInstance.result.then(function() {
         // Modal was completed

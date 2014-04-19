@@ -98,7 +98,12 @@ body {
 
 .channel {
   margin: 10px;
-  
+}
+
+.channel .volume-bar {
+  width: 60px;
+  height: 17px;
+  margin-bottom: 0;
 }
 
 .sidebar {

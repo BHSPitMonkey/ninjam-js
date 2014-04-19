@@ -26,25 +26,30 @@
             <img src="img/ic_more_black.svg"> <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">Action</a></li>
-            <li><a href="#">Another action</a></li>
-            <li><a href="#">Something else here</a></li>
+            <li><a ng-click="ninjam.debug = !ninjam.debug">Toggle debug panel</a></li>
             <li class="divider"></li>
             <li><a ng-click="ninjam.disconnect()">Disconnect</a></li>
           </ul>
         </div>
-        <progress animate="false" value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" type="success" class="navbar-right"></progress>
+        <progressbar animate="false" value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" type="success" class="navbar-right"></progressbar>
       </span>
-      <!--code class="pull-right">{{ninjam.status}}</code-->
     </div>
   </div>
   <ng-view></ng-view>
 
-  <div class="debug" ng-controller="DebugPane">
+  <div class="debug" ng-controller="DebugPane" ng-show="ninjam.debug">
     <p>status: {{ninjam.status}}</p>
     <p>host: {{ninjam.host}}</p>
     <p>port: {{ninjam.port}}</p>
     <p>username: {{ninjam.username}}</p>
+    <p>audioIntervals:</p>
+    <ul>
+      <li ng-repeat="inv in ninjam._audioIntervals">{{inv.username}} ({{inv.chunks.length}})</li>
+    </ul>
+    <p>users:</p>
+    <ul ng-repeat="u in ninjam.users">
+      <li ng-repeat="c in u.channels">{{u.name}}[{{$index}}] ({{c.readyIntervals.length}})</li>
+    </ul>
   </div>
 
   <!-- In production use:

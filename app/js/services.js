@@ -145,8 +145,8 @@ angular.module('myApp.services', []).
     };
     return IntervalDownload;
   }).
-  factory('Channel', function() {
-    function Channel(name, volume, pan) {
+  factory('Channel', function($$rAF) {
+    function Channel(name, volume, pan, outputNode) {
       this.name = name;
       this.volume = volume;
       this.pan = pan;
@@ -154,7 +154,24 @@ angular.module('myApp.services', []).
       this.localMute = false;
       this.localSolo = false;
       this.localVolume = 0.8;
-      this.gainNode = null;
+      this.analyser = outputNode.context.createAnalyser();
+      this.analyser.fftSize = 32;
+      this.analyser.smoothingTimeConstant = 0;
+      this.analyser.connect(outputNode);
+      this.gainNode = outputNode.context.createGain();
+      this.gainNode.connect(this.analyser);
+      this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
+      this.frequencyDataLastUpdate = 0;
+      this.maxDecibelValue = 0; // Should map from 0 to 100
+      this.frequencyUpdateLoop = function(timestamp) {
+        if (timestamp > this.frequencyDataLastUpdate + 75) {
+          this.frequencyDataLastUpdate = timestamp;
+          this.analyser.getFloatFrequencyData(this.frequencyData);
+          this.maxDecibelValue = 100 + Math.max.apply(null, this.frequencyData);
+        }
+        $$rAF(this.frequencyUpdateLoop);
+      }.bind(this);
+      $$rAF(this.frequencyUpdateLoop);
     }
     Channel.prototype = {
       update: function(name, volume, pan) {
@@ -173,7 +190,14 @@ angular.module('myApp.services', []).
             bufferSource.start();
           }
         }
-      }
+      },
+      setMute : function(state) {
+        this.localMute = state;
+        this.gainNode.gain.value = (this.localMute) ? 0.0 : 1.0;
+      },
+      toggleMute : function() {
+        this.setMute(!this.localMute);
+      },
     };
     return Channel;
   }).
@@ -239,6 +263,7 @@ angular.module('myApp.services', []).
 
       // Initialize values (only the ones that need resetting after disconnect)
       this.reset = function() {
+        this.debug = false;         // Causes debug pane to appear in UI
         this.socketId = null;
         this.status = "starting";   // Indicates connection status, for debugging
         this.host = null;
@@ -785,10 +810,8 @@ angular.module('myApp.services', []).
                     // Create channel if necessary
                     if (!user.channels[fields.channelIndex]) {
                       console.log("Channel index not already known, creating...");
-                      var channel = new Channel(fields.channelName, fields.volume, fields.pan);
+                      var channel = new Channel(fields.channelName, fields.volume, fields.pan, this._masterGain);
                       console.log(channel);
-                      channel.gainNode = this._audioContext.createGain();
-                      channel.gainNode.connect(this._masterGain);
                       user.channels[fields.channelIndex] = channel;
                       
                       // Subscribe to this channel, since we just met it
