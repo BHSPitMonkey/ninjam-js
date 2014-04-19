@@ -145,6 +145,58 @@ angular.module('myApp.services', []).
     };
     return IntervalDownload;
   }).
+  factory('LocalChannel', function($$rAF, $rootScope) {
+    function LocalChannel(name, outputNode) {
+      this.setName(name);
+      this.localMute = false;
+      this.inputMute = false;
+      this.localGain = outputNode.context.createGain();
+      this.localGain.connect(outputNode);
+      this.analyser = outputNode.context.createAnalyser();
+      this.analyser.fftSize = 32;
+      this.analyser.connect(this.localGain);
+      this.inputGain = outputNode.context.createGain();
+      this.inputGain.gain.value = 0.8;
+      this.inputGain.connect(this.analyser);
+      this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
+      this.frequencyDataLastUpdate = 0;
+      this.maxDecibelValue = 0; // Should map from 0 to 100
+      this.frequencyUpdateLoop = function(timestamp) {
+        if (timestamp > this.frequencyDataLastUpdate + 10) {
+          this.frequencyDataLastUpdate = timestamp;
+          this.analyser.getFloatFrequencyData(this.frequencyData);
+          this.maxDecibelValue = 100 + Math.max.apply(null, this.frequencyData);
+          // NEED TO $apply THIS CHANGE
+          $rootScope.$apply(this.maxDecibelValue);
+        }
+        $$rAF(this.frequencyUpdateLoop);
+      }.bind(this);
+      $$rAF(this.frequencyUpdateLoop);
+    }
+    LocalChannel.prototype = {
+      setName: function(name) {
+        this.name = name;
+      },
+      getInputNode: function() {
+        return this.inputGain;
+      },
+      setInputMute : function(state) {
+        this.inputMute = state;
+        this.inputGain.gain.value = (this.inputMute) ? 0.0 : 1.0;
+      },
+      toggleInputMute : function() {
+        this.setInputMute(!this.inputMute);
+      },
+      setLocalMute : function(state) {
+        this.localMute = state;
+        this.localGain.gain.value = (this.localMute) ? 0.0 : 1.0;
+      },
+      toggleLocalMute : function() {
+        this.setLocalMute(!this.localMute);
+      },
+    }
+    return LocalChannel;
+  }).
   factory('Channel', function($$rAF) {
     function Channel(name, volume, pan, outputNode) {
       this.update(name, volume, pan);
@@ -154,7 +206,6 @@ angular.module('myApp.services', []).
       this.localVolume = 0.8;
       this.analyser = outputNode.context.createAnalyser();
       this.analyser.fftSize = 32;
-      this.analyser.smoothingTimeConstant = 0;
       this.analyser.connect(outputNode);
       this.gainNode = outputNode.context.createGain();
       this.gainNode.connect(this.analyser);
@@ -216,7 +267,7 @@ angular.module('myApp.services', []).
     };
     return User;
   }).
-  factory('NinjamClient', function(MessageReader, MessageBuilder, IntervalDownload, Channel, User, $timeout) {
+  factory('NinjamClient', function(MessageReader, MessageBuilder, IntervalDownload, Channel, LocalChannel, User, $timeout) {
     var NinjamClient = function() {
       // Set up audio playback context
       this._audioContext = new webkitAudioContext();
@@ -224,7 +275,8 @@ angular.module('myApp.services', []).
       this._masterGain.connect(this._audioContext.destination);
       this._metronomeGain = this._audioContext.createGain();
       this._metronomeGain.connect(this._masterGain);
-      
+      this.microphoneSourceNode;
+
       // Set up metronome sounds
       this._hiClickBuffer = null;
       this._loClickBuffer = null;
@@ -279,10 +331,10 @@ angular.module('myApp.services', []).
         this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
         this.setMasterMute(false);
         this.setMetronomeMute(false);
-        this.setMicrophoneMute(false);
-        
-        this._localChannels = [{name:"Default"}];
-        
+
+        this._localChannels = [new LocalChannel('Microphone', this._masterGain)];
+        this.setMicrophoneInputMute(false);
+
         this._socketPoll = null;        // setTimeout handle for continuous socket reads
         this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
         this._callbacks = {
@@ -442,13 +494,16 @@ angular.module('myApp.services', []).
       toggleMetronomeMute : function() {
         this.setMetronomeMute(!this.metronomeMute);
       },
-      
-      setMicrophoneMute : function(state) {
-        this.microphoneMute = state;
+
+      setMicrophoneInputMute : function(state) {
+        this.microphoneInputMute = state;
+        for (var i=0; i<this._localChannels.length; i++) {
+          this._localChannels[i].setInputMute(state);
+        }
       },
-      
-      toggleMicrophoneMute : function() {
-        this.setMicrophoneMute(!this.microphoneMute);
+
+      toggleMicrophoneInputMute : function() {
+        this.setMicrophoneInputMute(!this.microphoneInputMute);
       },
       
       // Send something to server
@@ -497,15 +552,20 @@ angular.module('myApp.services', []).
       
       // Called when socket is connected
       _onConnectComplete : function(result) {
-        console.log("Socket connection attempt completed with code " + result);
-        
         if (result >= 0) {
-          // We are connected; Begin polling for new information
+          // We are connected; Begin listening for new information on the socket
           chrome.sockets.tcp.onReceive.addListener(this._onReceiveData.bind(this));
           chrome.sockets.tcp.onReceiveError.addListener(this._onReceiveError.bind(this));
+
+          // Try to open the microphone
+          console.log("Calling getUserMedia");
+          navigator.webkitGetUserMedia({'audio':true}, this.gotUserMedia.bind(this));
+        }
+        else {
+          console.log("Socket connection attempt failed with code " + result);
         }
       },
-      
+
       // Called when data has been read from the socket
       _onReceiveData : function(info) {
         // Parse the received data
@@ -527,7 +587,13 @@ angular.module('myApp.services', []).
           console.log("Something wrong with socket! resultCode: " + info.resultCode);
         }
       },
-      
+
+      gotUserMedia : function(stream) {
+        this.microphoneSourceNode = this._audioContext.createMediaStreamSource(stream);
+        this.microphoneSourceNode.connect(this._localChannels[0].getInputNode());
+        console.log("Got user media! Connecting to microphoneInputGain");
+      },
+
       // Called when a send operation completes (or has an error)
       _onDataSend : function(sendInfo) {
         //console.log("Socket write completed: ")
@@ -536,7 +602,7 @@ angular.module('myApp.services', []).
           console.log("Error writing to socket! resultCode: " + sendInfo.resultCode);
         }
       },
-      
+
       // Converts an array buffer to a string asynchronously
       _arrayBufferToStringAsync : function(buf, callback) {
         var bb = new Blob([new Uint8Array(buf)]);

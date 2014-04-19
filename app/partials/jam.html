@@ -10,8 +10,9 @@
           <div class="channels">
             <div ng-repeat="channel in ninjam._localChannels" class="channel">
               <div class="btn-group">
-                <button class="btn btn-default" disabled>-</button>
-                <button class="btn btn-default" disabled>-</button>
+                <button class="btn btn-default">Transmit</button>
+                <button class="btn" ng-class="{true: 'btn-default', false: 'btn-primary'}[channel.localMute]" ng-click="channel.toggleLocalMute()">Listen</button>
+                <button class="btn btn-default" disabled><progressbar class="volume-bar" type="danger" animate="false" value="channel.maxDecibelValue"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
               </div>
             </div>
@@ -29,7 +30,7 @@
               <div class="btn-group">
                 <button class="btn" ng-class="{true: 'btn-primary', false: 'btn-default'}[channel.localMute]" ng-click="channel.toggleMute()">M</button>
                 <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[channel.localSolo]" ng-click="channel.localSolo = !channel.localSolo">S</button>                    
-                <button class="btn btn-default" disabled><progressbar class="volume-bar" value="channel.maxDecibelValue"></progressbar></button>
+                <button class="btn btn-default" disabled><progressbar class="volume-bar" animate="false" value="channel.maxDecibelValue"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
               </div>
             </div>
