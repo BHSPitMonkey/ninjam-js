@@ -196,7 +196,6 @@ angular.module('myApp.services', []).
           this.frequencyDataLastUpdate = timestamp;
           this.analyser.getFloatFrequencyData(this.frequencyData);
           this.maxDecibelValue = 100 + Math.max.apply(null, this.frequencyData);
-          // NEED TO $apply THIS CHANGE
           $rootScope.$apply(this.maxDecibelValue);
         }
         $$rAF(this.frequencyUpdateLoop);
@@ -227,7 +226,7 @@ angular.module('myApp.services', []).
     }
     return LocalChannel;
   }).
-  factory('Channel', function($$rAF) {
+  factory('Channel', function($$rAF, $rootScope) {
     function Channel(name, volume, pan, outputNode) {
       this.update(name, volume, pan);
       this.readyIntervals = [];
@@ -247,6 +246,7 @@ angular.module('myApp.services', []).
           this.frequencyDataLastUpdate = timestamp;
           this.analyser.getFloatFrequencyData(this.frequencyData);
           this.maxDecibelValue = 100 + Math.max.apply(null, this.frequencyData);
+          $rootScope.$apply(this.maxDecibelValue);
         }
         $$rAF(this.frequencyUpdateLoop);
       }.bind(this);
@@ -618,10 +618,19 @@ angular.module('myApp.services', []).
         }
       },
 
+      gotUserMediaSources: function(sourceInfos) {
+        for (var i=0; i<sourceInfos.length; i++) {
+          var sourceInfo = sourceInfos[i];
+          if (sourceInfo.kind === 'audio') {
+            var name = sourceInfo.label || 'Audio device';
+            // TODO
+          }
+        }
+      },
+
       gotUserMedia : function(stream) {
         this.microphoneSourceNode = this._audioContext.createMediaStreamSource(stream);
         this.microphoneSourceNode.connect(this._localChannels[0].getInputNode());
-        console.log("Got user media! Connecting to microphoneInputGain");
       },
 
       // Called when a send operation completes (or has an error)
@@ -1009,8 +1018,6 @@ angular.module('myApp.services', []).
                   case "PART":
                     this.downloads.deleteUserDownloads(fields.arg1);
                     delete this.users[fields.arg1];
-                    console.log("User " + fields.arg1 + " should be gone, but:");
-                    console.log(this.users);
                     break;
                   case "USERCOUNT":
                     break;
