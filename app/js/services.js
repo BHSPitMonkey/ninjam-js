@@ -145,7 +145,7 @@ angular.module('myApp.services', []).
     };
     return IntervalDownload;
   }).
-  factory('Channel', function() {
+  factory('Channel', function($$rAF) {
     function Channel(name, volume, pan, outputNode) {
       this.name = name;
       this.volume = volume;
@@ -160,6 +160,15 @@ angular.module('myApp.services', []).
       this.gainNode = outputNode.context.createGain();
       this.gainNode.connect(this.analyser);
       this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+      this.frequencyDataLastUpdate = 0;
+      this.frequencyUpdateLoop = function(timestamp) {
+        if (timestamp > this.frequencyDataLastUpdate + 75) {
+          this.frequencyDataLastUpdate = timestamp;
+          this.analyser.getByteFrequencyData(this.frequencyData);
+        }
+        $$rAF(this.frequencyUpdateLoop);
+      }.bind(this);
+      $$rAF(this.frequencyUpdateLoop);
     }
     Channel.prototype = {
       update: function(name, volume, pan) {
@@ -186,10 +195,6 @@ angular.module('myApp.services', []).
       toggleMute : function() {
         this.setMute(!this.localMute);
       },
-      getSimpleOutputLevel: function() {
-        this.analyser.getByteFrequencyData(this.frequencyData);
-        return this.frequencyData[0]; // TODO: Get average
-      }
     };
     return Channel;
   }).

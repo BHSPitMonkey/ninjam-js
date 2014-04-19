@@ -29,7 +29,7 @@
               <div class="btn-group">
                 <button class="btn" ng-class="{true: 'btn-primary', false: 'btn-default'}[channel.localMute]" ng-click="channel.toggleMute()">M</button>
                 <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[channel.localSolo]" ng-click="channel.localSolo = !channel.localSolo">S</button>                    
-                <button class="btn btn-default" ng-click="channel.getSimpleOutputLevel()"><progressbar class="volume-bar" value=""></progressbar></button>
+                <button class="btn btn-default" ng-click="channel.getSimpleOutputLevel()"><progressbar class="volume-bar" value="channel.frequencyData[0]"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
               </div>
             </div>
