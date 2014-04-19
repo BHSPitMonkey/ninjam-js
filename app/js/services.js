@@ -188,7 +188,6 @@ angular.module('myApp.services', []).
       },
       getSimpleOutputLevel: function() {
         this.analyser.getByteFrequencyData(this.frequencyData);
-        console.log(this.frequencyData); // TODO: Get average
         return this.frequencyData[0]; // TODO: Get average
       }
     };
