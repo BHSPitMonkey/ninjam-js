@@ -92,6 +92,10 @@ body {
   float: right;
 }
 
+.panel-primary .user-ip {
+  color: #fff;
+}
+
 .users .panel-body {
   padding: 5px;
 }
