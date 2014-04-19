@@ -44,7 +44,7 @@
     <p>username: {{ninjam.username}}</p>
     <p>audioIntervals:</p>
     <ul>
-      <li ng-repeat="inv in ninjam._audioIntervals">{{inv.username}} ({{inv.chunks.length}})</li>
+      <li ng-repeat="inv in ninjam.downloads.intervals">{{inv.username}} ({{inv.chunks.length}})</li>
     </ul>
     <p>users:</p>
     <ul ng-repeat="u in ninjam.users">

@@ -145,6 +145,36 @@ angular.module('myApp.services', []).
     };
     return IntervalDownload;
   }).
+  factory('DownloadManager', function(IntervalDownload) {
+    function DownloadManager() {
+      this.intervals = {};
+    }
+    DownloadManager.prototype = {
+      contains: function(guid) {
+        return this.intervals.hasOwnProperty(guid);
+      },
+      get: function(guid) {
+        return this.intervals[guid];
+      },
+      add: function(guid, username, channelIndex) {
+        this.intervals[guid] = new IntervalDownload(username, channelIndex);
+      },
+      delete: function(guid) {
+        delete this.intervals[guid];
+      },
+      deleteUserDownloads: function(username) {
+        for (var guid in this.downloads) {
+          if (this.intervals[guid].username == username) {
+            delete this.intervals[guid];
+          }
+        }
+      },
+      clearAll: function() {
+        this.intervals = {};
+      },
+    };
+    return DownloadManager;
+  }).
   factory('LocalChannel', function($$rAF, $rootScope) {
     function LocalChannel(name, outputNode) {
       this.setName(name);
@@ -267,7 +297,7 @@ angular.module('myApp.services', []).
     };
     return User;
   }).
-  factory('NinjamClient', function(MessageReader, MessageBuilder, IntervalDownload, Channel, LocalChannel, User, $timeout) {
+  factory('NinjamClient', function(MessageReader, MessageBuilder, DownloadManager, Channel, LocalChannel, User, $timeout) {
     var NinjamClient = function() {
       // Set up audio playback context
       this._audioContext = new webkitAudioContext();
@@ -346,7 +376,7 @@ angular.module('myApp.services', []).
         this._lastSendTime = null;      // Time of last socket write
         this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
         this._nextIntervalBegin = null; // setTimeout handle for local interval setup
-        this._audioIntervals = {};      // Will contain audio data buffer queues keyed by GUID
+        this.downloads = new DownloadManager();
       };
       this.reset();
     };
@@ -687,9 +717,9 @@ angular.module('myApp.services', []).
       // Finish and enqueue a particular interval download
       _finishIntervalDownload : function(guid) {
         // Retrieve the data and delete the download from the queue
-        var fullBufferArray = this._audioIntervals[guid].finish();
-        var username = this._audioIntervals[guid].username;
-        var channelIndex = this._audioIntervals[guid].channelIndex;
+        var fullBufferArray = this.downloads.get(guid).finish();
+        var username = this.downloads.get(guid).username;
+        var channelIndex = this.downloads.get(guid).channelIndex;
 
         // Try to decode and then enqueue the audio in the Channel it belongs to
         this._audioContext.decodeAudioData(fullBufferArray.buffer, function(audioBuffer) {
@@ -707,7 +737,7 @@ angular.module('myApp.services', []).
         }.bind(this));
 
         // Delete the download from the queue
-        delete this._audioIntervals[guid];
+        this.downloads.delete(guid);
       },
       
       // Play the next ready interval (if exists) for all Channels
@@ -787,9 +817,8 @@ angular.module('myApp.services', []).
                   protocolVersion: msg.nextUint32(),
                   licenseAgreement: msg.nextString()
                 };
-                console.log(fields);
                 this.passHash = CryptoJS.SHA1(this.passHash + fields.challenge);  // Pass 2/2
-                
+
                 // Tell the UI about this challenge
                 this._callbacks.onChallenge(fields);
                 break;
@@ -909,7 +938,8 @@ angular.module('myApp.services', []).
                 console.log("Got new Download Interval Begin with username: " + fields.username);
                 
                 // If this GUID is already known to us
-                if (this._audioIntervals.hasOwnProperty(fields.guid)) {
+                var download = this.downloads.get(fields.guid);
+                if (this.downloads.contains(fields.guid)) {
                   // Not sure how to treat this situation
                   console.log("[!!!] Received Download Interval Begin for known guid:");
                   console.log(fields.guid);
@@ -917,9 +947,7 @@ angular.module('myApp.services', []).
                 else {
                   if (fields.fourCC == "OGGv") {
                     // Set up a queue for this GUID, associated with the proper user/chan
-                    this._audioIntervals[fields.guid] = new IntervalDownload(fields.username, fields.channelIndex);
-                    //console.log("Audio intervals:");
-                    //console.log(this._audioIntervals);
+                    this.downloads.add(fields.guid, fields.username, fields.channelIndex);
                   }
                   else {
                     console.log("[!!!] Received Download Interval Begin with non-OGGv fourCC:");
@@ -939,9 +967,9 @@ angular.module('myApp.services', []).
                 //console.log("Received a Server Download Interval Write notification. Payload size " + length + " Guid: " + fields.guid + " Flags: " + fields.flags);
 
                 // If this GUID is already known to us
-                if (this._audioIntervals.hasOwnProperty(fields.guid)) {
+                if (this.downloads.contains(fields.guid)) {
                   // Push the audio data to the queue for this GUID
-                  this._audioIntervals[fields.guid].addChunk(fields.audioData);
+                  this.downloads.get(fields.guid).addChunk(fields.audioData);
 
                   // If flags==1, this queue is complete and may be assembled/decoded/scheduled for playback
                   if (fields.flags == 1) {
@@ -963,7 +991,7 @@ angular.module('myApp.services', []).
                   arg4: msg.nextString()
                 };
                 console.log(fields);
-                
+
                 switch (fields.command) {
                   case "MSG":
                     break;
@@ -979,12 +1007,15 @@ angular.module('myApp.services', []).
                     this.users[fields.arg1] = new User(username, fields.arg1, ip);
                     break;
                   case "PART":
+                    this.downloads.deleteUserDownloads(fields.arg1);
                     delete this.users[fields.arg1];
+                    console.log("User " + fields.arg1 + " should be gone, but:");
+                    console.log(this.users);
                     break;
                   case "USERCOUNT":
                     break;
                 }
-                
+
                 // Inform callback
                 if (this._callbacks.onChatMessage)
                   this._callbacks.onChatMessage(fields);
