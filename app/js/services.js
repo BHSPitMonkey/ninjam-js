@@ -159,12 +159,14 @@ angular.module('myApp.services', []).
       this.analyser.connect(outputNode);
       this.gainNode = outputNode.context.createGain();
       this.gainNode.connect(this.analyser);
-      this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+      this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
       this.frequencyDataLastUpdate = 0;
+      this.maxDecibelValue = 0; // Should map from 0 to 100
       this.frequencyUpdateLoop = function(timestamp) {
         if (timestamp > this.frequencyDataLastUpdate + 75) {
           this.frequencyDataLastUpdate = timestamp;
-          this.analyser.getByteFrequencyData(this.frequencyData);
+          this.analyser.getFloatFrequencyData(this.frequencyData);
+          this.maxDecibelValue = 100 + Math.max.apply(null, this.frequencyData);
         }
         $$rAF(this.frequencyUpdateLoop);
       }.bind(this);
