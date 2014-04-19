@@ -179,8 +179,12 @@ angular.module('myApp.services', []).
           }
         }
       },
-      toggleMute: function() {
-        // TODO
+      setMute : function(state) {
+        this.localMute = state;
+        this.gainNode.gain.value = (this.localMute) ? 0.0 : 1.0;
+      },
+      toggleMute : function() {
+        this.setMute(!this.localMute);
       },
       getSimpleOutputLevel: function() {
         this.analyser.getByteFrequencyData(this.frequencyData);
