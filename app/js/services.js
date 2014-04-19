@@ -156,6 +156,7 @@ angular.module('myApp.services', []).
       this.localVolume = 0.8;
       this.analyser = outputNode.context.createAnalyser();
       this.analyser.fftSize = 32;
+      this.analyser.smoothingTimeConstant = 0;
       this.analyser.connect(outputNode);
       this.gainNode = outputNode.context.createGain();
       this.gainNode.connect(this.analyser);
