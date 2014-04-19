@@ -103,8 +103,11 @@ angular.module('myApp.controllers', []).
     // Called by NinjamClient service when server issues auth challenge
     $scope.onAuthChallenge = function(challengeFields) {
       
+      var modalScope = $scope.$new();
+      modalScope.agreement = challengeFields.licenseAgreement;
       var modalInstance = $modal.open({
-        templateUrl: "partials/modalLicenseAgreement.html"
+        templateUrl: "partials/modalLicenseAgreement.html",
+        scope: modalScope
       });
       modalInstance.result.then(function() {
         // Modal was completed
