@@ -31,9 +31,8 @@
             <li><a ng-click="ninjam.disconnect()">Disconnect</a></li>
           </ul>
         </div>
-        <progress animate="false" value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" type="success" class="navbar-right"></progress>
+        <progressbar animate="false" value="((ninjam.currentBeat + 1) / ninjam.bpi) * 100" type="success" class="navbar-right"></progressbar>
       </span>
-      <!--code class="pull-right">{{ninjam.status}}</code-->
     </div>
   </div>
   <ng-view></ng-view>
