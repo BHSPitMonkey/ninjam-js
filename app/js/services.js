@@ -147,9 +147,7 @@ angular.module('myApp.services', []).
   }).
   factory('Channel', function($$rAF) {
     function Channel(name, volume, pan, outputNode) {
-      this.name = name;
-      this.volume = volume;
-      this.pan = pan;
+      this.update(name, volume, pan);
       this.readyIntervals = [];
       this.localMute = false;
       this.localSolo = false;
@@ -175,7 +173,7 @@ angular.module('myApp.services', []).
     }
     Channel.prototype = {
       update: function(name, volume, pan) {
-        this.name = name;
+        this.name = (name != "") ? name : "No name";
         this.volume = volume;
         this.pan = pan;
       },
