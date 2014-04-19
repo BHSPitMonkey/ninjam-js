@@ -891,15 +891,15 @@ angular.module('myApp.services', []).
                   var username = pieces[0];
                   var ip = (pieces.length == 2) ? pieces[1] : "";
 
-                  // Create user if necessary
-                  if (!this.users[fields.username]) {
-                    console.log("User not already known, creating...");
-                    this.users[fields.username] = new User(username, fields.username, ip);
-                  }
-                  var user = this.users[fields.username];
-
                   // If channel is active
                   if (fields.active == 1) {
+                    // Create user if necessary
+                    if (!this.users[fields.username]) {
+                      console.log("User not already known, creating...");
+                      this.users[fields.username] = new User(username, fields.username, ip);
+                    }
+                    var user = this.users[fields.username];
+
                     // Create channel if necessary
                     if (!user.channels[fields.channelIndex]) {
                       console.log("Channel index not already known, creating...");
@@ -919,7 +919,7 @@ angular.module('myApp.services', []).
                   }
                   else {
                     // This channel is no longer active, so remove it
-                    if (user) {
+                    if (this.users[fields.username]) {
                       console.log("Deleting now-inactive channel");
                       delete this.users[fields.username].channels[fields.channelIndex];
                     }
