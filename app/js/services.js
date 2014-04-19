@@ -307,7 +307,7 @@ angular.module('myApp.services', []).
             throw "Invalid host format"
           }
           
-          chrome.sockets.connect(this.socketId, this.host, this.port, this._onConnectComplete.bind(this));
+          chrome.sockets.tcp.connect(this.socketId, this.host, this.port, this._onConnectComplete.bind(this));
           
           this.status = "connecting";
         }

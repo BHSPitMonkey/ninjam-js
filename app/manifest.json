@@ -12,8 +12,8 @@
     "16": "img/icon-16.png",
     "128": "img/icon-128.png"
   },
+  "sockets": { "tcp": { "connect" : "" } },
   "permissions": [
-    { "sockets": { "tcp": { "connect" : "" } } },
     "notifications",
     "storage",
     "audioCapture"
