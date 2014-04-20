@@ -178,9 +178,10 @@ angular.module('myApp.services', []).
   factory('LocalChannel', function($$rAF, $rootScope) {
     function LocalChannel(name, outputNode) {
       this.setName(name);
-      this.localMute = false;
+      this.localMute = true;
       this.inputMute = false;
       this.localGain = outputNode.context.createGain();
+      this.localGain.gain.value = 0;
       this.localGain.connect(outputNode);
       this.analyser = outputNode.context.createAnalyser();
       this.analyser.fftSize = 32;
