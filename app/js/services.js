@@ -336,16 +336,23 @@ angular.module('myApp.services', []).
         );
       }.bind(this);
       requestHi.send();
-      
+
       // Try to create the socket
       console.log("Trying to create socket...");
       chrome.sockets.tcp.create({}, this._onCreate.bind(this));
 
-      // Initialize values (only the ones that need resetting after disconnect)
-      this.reset = function() {
+      this.socketId;
+      this.status = "starting";
+      this._callbacks = {
+        onChallenge: null,
+        onChatMessage: null,
+        onDisconnect: null
+      };
+
+      // Set initial state (used between disconnects also)
+      this.reinit = function() {
         this.debug = false;         // Causes debug pane to appear in UI
-        this.socketId = null;
-        this.status = "starting";   // Indicates connection status, for debugging
+        this.status = "ready";
         this.host = null;
         this.port = null;
         this.username = null;
@@ -365,20 +372,13 @@ angular.module('myApp.services', []).
         this._localChannels = [new LocalChannel('Microphone', this._masterGain)];
         this.setMicrophoneInputMute(false);
 
-        this._socketPoll = null;        // setTimeout handle for continuous socket reads
-        this._shouldPollSocket = true;  // Set to false to temporarily disable socket reads
-        this._callbacks = {
-          onChallenge: null,
-          onChatMessage: null,
-          onDisconnect: null
-        };
         this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
         this._lastSendTime = null;      // Time of last socket write
         this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
         this._nextIntervalBegin = null; // setTimeout handle for local interval setup
         this.downloads = new DownloadManager();
       };
-      this.reset();
+      this.reinit();
     };
     
     angular.extend(NinjamClient.prototype, {
@@ -485,10 +485,6 @@ angular.module('myApp.services', []).
       disconnect : function(reason) {
         console.log("Disconnecting from server.");
         this.status = "disconnecting";
-        if (this._socketPoll) {
-          $timeout.cancel(this._socketPoll);
-          this._socketPoll = null;
-        }
         if (this._nextIntervalBegin) {
           $timeout.cancel(this._nextIntervalBegin);
           this._nextIntervalBegin = null;
@@ -497,14 +493,13 @@ angular.module('myApp.services', []).
           $timeout.cancel(this._checkKeepaliveTimeout)
           this._checkKeepaliveTimeout = null;
         }
-        this.users = {};
-        this.bpm = null;
-        this.bpi = null;
-        this.topic = null;
         chrome.sockets.tcp.disconnect(this.socketId);
-        this.status = "ready";
-        if (this._callbacks.onDisconnect)
+        // TODO: Kill all the audio
+        this.downloads.clearAll();
+        if (this._callbacks.onDisconnect) {
           this._callbacks.onDisconnect(reason);
+        }
+        this.reinit();
       },
 
       setMasterMute : function(state) {
@@ -572,7 +567,7 @@ angular.module('myApp.services', []).
         console.log("Called onCreate. Got socket ID " + createInfo.socketId);
         this.socketId = createInfo.socketId;
         if (this.socketId > 0) {
-          this.status = "ready";
+          this.reinit();
         }
         else {
           console.log("Couldn't create socket!");
