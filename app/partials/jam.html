@@ -10,7 +10,7 @@
           <div class="channels">
             <div ng-repeat="channel in ninjam._localChannels" class="channel">
               <div class="btn-group">
-                <button class="btn btn-default" disabled tooltip="Not yet available">Transmit</button>
+                <button class="btn btn-default" tooltip="Not yet available">Transmit</button>
                 <button class="btn" ng-class="{true: 'btn-default', false: 'btn-primary'}[channel.localMute]" ng-click="channel.toggleLocalMute()">Listen</button>
                 <button class="btn btn-default" disabled><progressbar class="volume-bar" type="danger" animate="false" value="channel.maxDecibelValue"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
