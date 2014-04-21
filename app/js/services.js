@@ -3,6 +3,75 @@
 /* Services */
 
 angular.module('myApp.services', []).
+  factory('GenericTCPSocket', function() {
+    function GenericTCPSocket() {
+      if (chrome.sockets) {
+        chrome.sockets.tcp.create({}, this.onChromeCreated.bind(this));
+      }
+      else if (navigator.mozTCPSocket) {
+        // No action needed until open() is called.
+      }
+    }
+    GenericTCPSocket.prototype = {
+      onChromeCreated: function(createInfo) {
+        this.socketId = createInfo.socketId;
+        // TODO: Fire event
+      },
+      open: function(host, port) {
+        if (chrome.sockets) {
+          chrome.sockets.tcp.connect(this.socketId, host, port, this.onChromeConnect.bind(this));
+        }
+        else if (navigator.mozTCPSocket) {
+          this.socket = navigator.mozTCPSocket.open(host, port, {binaryType:"arraybuffer"});
+          this.socket.onopen = this.onMozConnect.bind(this);
+          this.socket.ondata = this.onMozReceive.bind(this);
+          this.socket.onerror = this.onMozError.bind(this);
+          this.socket.onclose = this.onMozClose.bind(this);
+        }
+      },
+      onChromeConnect: function(result) {
+        // TODO: Fire onconnect event
+      },
+      onMozConnect: function(event) {
+        // TODO: Fire onconnect event
+      },
+      onChromeReceive: function(info) {
+        // TODO: Fire event and pass info.data
+      },
+      onChromeReceiveError: function(info) {
+        // TODO: Fire event
+      },
+      onMozReceive: function(event) {
+        // TODO: Fire event and pass event.data
+      },
+      onMozError: function(event) {
+        // TODO: Fire event
+      },
+      write: function(data) {
+        if (chrome.sockets) {
+          chrome.sockets.tcp.send(this.socketId, buf, this.onChromeSend.bind(this));
+        }
+        else if (navigator.mozTCPSocket) {
+          this.socket.send(data);
+        }
+      },
+      onChromeSend: function(sendInfo) {
+        // TODO: Fire event
+      },
+      close: function() {
+        if (chrome.sockets) {
+          chrome.sockets.tcp.disconnect(this.socketId);
+        }
+        else if (navigator.mozTCPSocket) {
+          this.socket.close();
+        }
+      },
+      onMozClose: function(event) {
+        // TODO: Fire event
+      }
+    };
+    return GenericTCPSocket;
+  }).
   factory('MessageReader', function() {
     function MessageReader(buf) {
       this._data = new DataView(buf);
@@ -301,7 +370,8 @@ angular.module('myApp.services', []).
   factory('NinjamClient', function(MessageReader, MessageBuilder, DownloadManager, Channel, LocalChannel, User, $timeout) {
     var NinjamClient = function() {
       // Set up audio playback context
-      this._audioContext = new webkitAudioContext();
+      window.AudioContext = window.AudioContext||window.webkitAudioContext;
+      this._audioContext = new window.AudioContext();
       this._masterGain = this._audioContext.createGain();
       this._masterGain.connect(this._audioContext.destination);
       this._metronomeGain = this._audioContext.createGain();
