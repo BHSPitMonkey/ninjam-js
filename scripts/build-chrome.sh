@@ -5,7 +5,7 @@ ZIPFILE="chrome.zip"
 
 cd `dirname $0`/..
 mkdir -p build
-rm -f "build/$ZIPFILE"
+rm -f "builds/$ZIPFILE"
 cd app
 
-zip -r "../build/$ZIPFILE" manifest.json index.html css img js lib partials snd
+zip -r "../builds/$ZIPFILE" manifest.json index.html css img js lib partials snd

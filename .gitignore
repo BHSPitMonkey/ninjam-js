@@ -1,4 +1,4 @@
 logs/*
 !.gitkeep
-build/*
+builds/*
 *.log

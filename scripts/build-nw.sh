@@ -4,7 +4,7 @@ ZIPFILE="app.nw"
 
 cd `dirname $0`/..
 mkdir -p build
-rm -f "build/$ZIPFILE"
+rm -f "builds/$ZIPFILE"
 cd app
 
-zip -r "../build/$ZIPFILE" package.json index.html css img js lib partials snd
+zip -r "../builds/$ZIPFILE" package.json index.html css img js lib partials snd
