@@ -1,0 +1,23 @@
+{
+  "name": "Ninjam JS",
+  "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
+  "launch_path": "/index.html",
+  "icons": {
+    "128": "img/icon-128.png"
+  },
+  "developer": {
+    "name": "Stephen Eisenhauer",
+    "url": "http://www.stepheneisenhauer.com"
+  },
+  "permissions": {
+    "audio-capture": {
+      "description": "Needed to record your audio."
+    },
+    "systemXHR": {
+      "description": "Needed to fetch public server information from ninjam.com."
+    },
+    "tcp-socket": {
+      "description": "Needed to connect to NINJAM servers."
+    }
+  }
+}
