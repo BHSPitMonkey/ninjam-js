@@ -2,3 +2,4 @@ logs/*
 !.gitkeep
 builds/*
 *.log
+node_modules/*
