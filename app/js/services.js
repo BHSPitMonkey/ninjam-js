@@ -3,75 +3,6 @@
 /* Services */
 
 angular.module('myApp.services', []).
-  factory('GenericTCPSocket', function() {
-    function GenericTCPSocket() {
-      if (chrome.sockets) {
-        chrome.sockets.tcp.create({}, this.onChromeCreated.bind(this));
-      }
-      else if (navigator.mozTCPSocket) {
-        // No action needed until open() is called.
-      }
-    }
-    GenericTCPSocket.prototype = {
-      onChromeCreated: function(createInfo) {
-        this.socketId = createInfo.socketId;
-        // TODO: Fire event
-      },
-      open: function(host, port) {
-        if (chrome.sockets) {
-          chrome.sockets.tcp.connect(this.socketId, host, port, this.onChromeConnect.bind(this));
-        }
-        else if (navigator.mozTCPSocket) {
-          this.socket = navigator.mozTCPSocket.open(host, port, {binaryType:"arraybuffer"});
-          this.socket.onopen = this.onMozConnect.bind(this);
-          this.socket.ondata = this.onMozReceive.bind(this);
-          this.socket.onerror = this.onMozError.bind(this);
-          this.socket.onclose = this.onMozClose.bind(this);
-        }
-      },
-      onChromeConnect: function(result) {
-        // TODO: Fire onconnect event
-      },
-      onMozConnect: function(event) {
-        // TODO: Fire onconnect event
-      },
-      onChromeReceive: function(info) {
-        // TODO: Fire event and pass info.data
-      },
-      onChromeReceiveError: function(info) {
-        // TODO: Fire event
-      },
-      onMozReceive: function(event) {
-        // TODO: Fire event and pass event.data
-      },
-      onMozError: function(event) {
-        // TODO: Fire event
-      },
-      write: function(data) {
-        if (chrome.sockets) {
-          chrome.sockets.tcp.send(this.socketId, buf, this.onChromeSend.bind(this));
-        }
-        else if (navigator.mozTCPSocket) {
-          this.socket.send(data);
-        }
-      },
-      onChromeSend: function(sendInfo) {
-        // TODO: Fire event
-      },
-      close: function() {
-        if (chrome.sockets) {
-          chrome.sockets.tcp.disconnect(this.socketId);
-        }
-        else if (navigator.mozTCPSocket) {
-          this.socket.close();
-        }
-      },
-      onMozClose: function(event) {
-        // TODO: Fire event
-      }
-    };
-    return GenericTCPSocket;
-  }).
   factory('MessageReader', function() {
     function MessageReader(buf) {
       this._data = new DataView(buf);
@@ -367,7 +298,7 @@ angular.module('myApp.services', []).
     };
     return User;
   }).
-  factory('NinjamClient', function(MessageReader, MessageBuilder, DownloadManager, Channel, LocalChannel, User, $timeout) {
+  factory('NinjamClient', function(NetSocket, MessageReader, MessageBuilder, DownloadManager, Channel, LocalChannel, User, $timeout) {
     var NinjamClient = function() {
       // Set up audio playback context
       window.AudioContext = window.AudioContext||window.webkitAudioContext;
@@ -410,7 +341,15 @@ angular.module('myApp.services', []).
 
       // Try to create the socket
       console.log("Trying to create socket...");
-      chrome.sockets.tcp.create({}, this._onCreate.bind(this));
+      this.socket = new NetSocket({
+        protocol: "tcp",
+        onCreate: this.onSocketCreate.bind(this),
+        onConnect: this.onSocketConnect.bind(this),
+        onReceive: this.parseMessages.bind(this),
+        onSend: this.onSocketSend.bind(this),
+//        onDisconnect: this.onSocketDisconnect.bind(this),
+//        onClose: this.onSocketClose.bind(this),
+      });
 
       this.socketId;
       this.status = "starting";
@@ -449,11 +388,41 @@ angular.module('myApp.services', []).
         this._nextIntervalBegin = null; // setTimeout handle for local interval setup
         this.downloads = new DownloadManager();
       };
-      this.reinit();
+      //this.reinit();
     };
     
     angular.extend(NinjamClient.prototype, {
-      
+      onSocketCreate : function(success) {
+        if (success === true) {
+          this.reinit();
+        }
+        else {
+          console.log("Couldn't create socket!");
+          this.status = "no socket";
+        }
+      },
+
+      onSocketConnect : function(success) {
+        if (success === true) {
+          // Try to open the microphone
+          console.log("Calling getUserMedia");
+          navigator.webkitGetUserMedia({'audio':true}, this.gotUserMedia.bind(this));
+        }
+        else {
+          console.log("Socket open attempt failed");
+        }
+      },
+
+      onSocketReceiveError : function(message) {
+        console.log("Something wrong with socket: " + message);
+      },
+
+      onSocketSend : function(success) {
+        if (success !== true) {
+          console.log("Error sending to socket!");
+        }
+      },
+
       // Periodically check whether a new keepalive message is needed
       _checkKeepalive : function() {
         if (this.status == "authenticated" && (new Date()).getTime() - this._lastSendTime > 3000)
@@ -461,18 +430,16 @@ angular.module('myApp.services', []).
         
         this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
       },
-      
+
       // Connect to specified Ninjam server
       connect : function(host, username, password, onChallenge) {
-        if (this.socketId > 0) {
-          console.log("You're trying to connect! This client's socket ID is " + this.socketId + " and status is " + this.status);
-          
+        if (this.status == "ready") {
           this.username = username;
           if (this.anonymous)
             username = "anonymous:" + username;
           this.passHash = CryptoJS.SHA1(username + ':' + password).toString(); // Pass 1/2
           this._callbacks.onChallenge = onChallenge;
-          
+
           // Split the host string (e.g. hostname:port) into hostname and port
           var pieces = host.split(":");
           if (pieces.length == 2) {
@@ -482,9 +449,9 @@ angular.module('myApp.services', []).
           else {
             throw "Invalid host format"
           }
-          
-          chrome.sockets.tcp.connect(this.socketId, this.host, this.port, this._onConnectComplete.bind(this));
-          
+
+          this.socket.connect(this.host, this.port);
+
           this.status = "connecting";
         }
         else {
@@ -564,7 +531,7 @@ angular.module('myApp.services', []).
           $timeout.cancel(this._checkKeepaliveTimeout)
           this._checkKeepaliveTimeout = null;
         }
-        chrome.sockets.tcp.disconnect(this.socketId);
+        this.socket.disconnect();
         // TODO: Kill all the audio
         this.downloads.clearAll();
         if (this._callbacks.onDisconnect) {
@@ -632,57 +599,6 @@ angular.module('myApp.services', []).
         msg.appendString('');
         this._packMessage(0xc0, msg.buf);
       },
-      
-      // Called when socket gets created
-      _onCreate : function(createInfo) {
-        console.log("Called onCreate. Got socket ID " + createInfo.socketId);
-        this.socketId = createInfo.socketId;
-        if (this.socketId > 0) {
-          this.reinit();
-        }
-        else {
-          console.log("Couldn't create socket!");
-          this.status = "no socket";
-        }
-      },
-      
-      // Called when socket is connected
-      _onConnectComplete : function(result) {
-        if (result >= 0) {
-          // We are connected; Begin listening for new information on the socket
-          chrome.sockets.tcp.onReceive.addListener(this._onReceiveData.bind(this));
-          chrome.sockets.tcp.onReceiveError.addListener(this._onReceiveError.bind(this));
-
-          // Try to open the microphone
-          console.log("Calling getUserMedia");
-          navigator.webkitGetUserMedia({'audio':true}, this.gotUserMedia.bind(this));
-        }
-        else {
-          console.log("Socket connection attempt failed with code " + result);
-        }
-      },
-
-      // Called when data has been read from the socket
-      _onReceiveData : function(info) {
-        // Parse the received data
-        this._parseMessages(info.data);
-      },
-
-      _onReceiveError : function(info) {
-        if (info.resultCode == -15)
-        {
-          console.log("Socket is no longer connected!");
-          this.disconnect("Socket became disconnected.");
-        }
-        else if (readInfo.resultCode < -1)
-        {
-          console.log("Socket read failed:");
-          console.log(readInfo);
-        }
-        else {
-          console.log("Something wrong with socket! resultCode: " + info.resultCode);
-        }
-      },
 
       gotUserMediaSources: function(sourceInfos) {
         for (var i=0; i<sourceInfos.length; i++) {
@@ -697,15 +613,6 @@ angular.module('myApp.services', []).
       gotUserMedia : function(stream) {
         this.microphoneSourceNode = this._audioContext.createMediaStreamSource(stream);
         this.microphoneSourceNode.connect(this._localChannels[0].getInputNode());
-      },
-
-      // Called when a send operation completes (or has an error)
-      _onDataSend : function(sendInfo) {
-        //console.log("Socket write completed: ")
-        //console.log(writeInfo);
-        if (sendInfo < 0) {
-          console.log("Error writing to socket! resultCode: " + sendInfo.resultCode);
-        }
       },
 
       // Converts an array buffer to a string asynchronously
@@ -827,7 +734,7 @@ angular.module('myApp.services', []).
       },
 
       // Parses an ArrayBuffer received from a Ninjam server
-      _parseMessages : function(buf) {
+      parseMessages : function(buf) {
         this._shouldPollSocket = false;
         
         if (this._msgBacklog != null) {
@@ -1138,7 +1045,7 @@ angular.module('myApp.services', []).
         }
         console.log(str); */
         
-        chrome.sockets.tcp.send(this.socketId, buf, this._onDataSend.bind(this));
+        this.socket.send(buf);
         this._lastSendTime = (new Date()).getTime();
       },
       
