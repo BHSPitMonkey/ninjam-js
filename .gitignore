@@ -2,3 +2,5 @@ logs/*
 !.gitkeep
 builds/*
 *.log
+*.crx
+*.pem
