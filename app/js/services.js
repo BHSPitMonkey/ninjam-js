@@ -456,7 +456,7 @@ angular.module('myApp.services', []).
           console.log("Can't connect: Socket not created! " + this.status);
         }
       },
-      
+
       // Answer the server's authentication challenge
       respondToChallenge : function(acceptedAgreement) {
         var username = (this.anonymous) ? "anonymous:" + this.username : this.username;
@@ -465,7 +465,7 @@ angular.module('myApp.services', []).
         // Insert password hash (binary, not hex string)
         for (var i=0; i<5; i++)
           msg.appendInt32(this.passHash.words[i]);
-          
+
         // Insert username
         msg.appendString(username);
 
@@ -516,7 +516,7 @@ angular.module('myApp.services', []).
 
         this._packMessage(0x82, msg.buf);
       },
-      
+
       // Disconnect from the current server
       disconnect : function(reason) {
         console.log("Disconnecting from server.");
@@ -542,7 +542,7 @@ angular.module('myApp.services', []).
         this.masterMute = state;
         this._masterGain.gain.value = (this.masterMute) ? 0.0 : 1.0;
       },
-      
+
       toggleMasterMute : function() {
         this.setMasterMute(!this.masterMute);
       },
@@ -551,7 +551,7 @@ angular.module('myApp.services', []).
         this.metronomeMute = state;
         this._metronomeGain.gain.value = (this.metronomeMute) ? 0.0 : 1.0;
       },
-      
+
       toggleMetronomeMute : function() {
         this.setMetronomeMute(!this.metronomeMute);
       },
@@ -566,7 +566,7 @@ angular.module('myApp.services', []).
       toggleMicrophoneInputMute : function() {
         this.setMicrophoneInputMute(!this.microphoneInputMute);
       },
-      
+
       // Send something to server
       submitChatMessage : function(content) {
         var msg = new MessageBuilder(content.length + 8);
@@ -577,7 +577,7 @@ angular.module('myApp.services', []).
         msg.appendString('');
         this._packMessage(0xc0, msg.buf);
       },
-      
+
       submitPrivateMessage : function(recipient, content) {
         var msg = new MessageBuilder(recipient.length + content.length + 12);
         msg.appendString('PRIVMSG');
@@ -587,7 +587,7 @@ angular.module('myApp.services', []).
         msg.appendString('');
         this._packMessage(0xc0, msg.buf);
       },
-      
+
       submitTopic : function(content) {
         var msg = new MessageBuilder(content.length + 10);
         msg.appendString('TOPIC');
@@ -622,7 +622,7 @@ angular.module('myApp.services', []).
         };
         f.readAsText(bb);
       },
-      
+
       // Converts a string to an array buffer
       _stringToArrayBufferAsync : function(str, callback) {
         var bb = new Blob([str]);
@@ -632,7 +632,7 @@ angular.module('myApp.services', []).
         };
         f.readAsArrayBuffer(bb);
       },
-      
+
       // Converts an array buffer to a hex string
       _arrayBufferToHexString : function(buf) {
         var str = "";
@@ -644,7 +644,7 @@ angular.module('myApp.services', []).
         }
         return str;
       },
-      
+
       // Converts an array buffer to a string
       _arrayBufferToString : function(buf) {
         var str = "";
@@ -654,7 +654,7 @@ angular.module('myApp.services', []).
         }
         return str;
       },
-      
+
       // Sets up a new interval
       _beginNewInterval : function() {
         this._currentIntervalCtxTime = this._audioContext.currentTime;
@@ -674,7 +674,7 @@ angular.module('myApp.services', []).
           bufferSource.buffer = (i == 0) ? this._hiClickBuffer : this._loClickBuffer;
           bufferSource.connect(this._metronomeGain);
           bufferSource.start(clickTime);
-          
+
           // Update the currentBeat property at these times as well
           if (i == 0)
             this.currentBeat = 0;
@@ -719,7 +719,7 @@ angular.module('myApp.services', []).
         // Delete the download from the queue
         this.downloads.delete(guid);
       },
-      
+
       // Play the next ready interval (if exists) for all Channels
       _playAllChannelsNextInterval : function() {
         for (var name in this.users) {
@@ -734,7 +734,7 @@ angular.module('myApp.services', []).
       // Parses an ArrayBuffer received from a Ninjam server
       parseMessages : function(buf) {
         this._shouldPollSocket = false;
-        
+
         if (this._msgBacklog != null) {
           //console.log("Fetching backlog (" + this._msgBacklog.byteLength + ")");
           //console.log("Merging with new buffer (" + buf.byteLength + ")");
@@ -751,10 +751,10 @@ angular.module('myApp.services', []).
           //console.log("Merged buf has " + buf.byteLength + " bytes.");
           this._msgBacklog = null;
         }
-        
+
         var msg = new MessageReader(buf);
         var error = false;
-        
+
         /* console.log("Here's the received buffer as a hex string:");
         var str = "";
         var dv = new DataView(buf);
@@ -769,7 +769,7 @@ angular.module('myApp.services', []).
             str += "  ";
         }
         console.log(str); */
-        
+
         // As long as the message has more data and we haven't hit errors...
         while (msg.hasMoreData() && !error) {
           if (msg.bytesRemaining() < 5) {
@@ -778,14 +778,14 @@ angular.module('myApp.services', []).
           }
           var type = msg.nextUint8();
           var length = msg.nextUint32();
-          
+
           // Are there `length` bytes remaining for us to peruse?
           if (msg.bytesRemaining() < length) {
             this._msgBacklog = buf.slice(msg._offset - 5);
             break;
           }
           else {
-          
+
             // React to the type of message we're seeing
             switch (type) {
               case 0x00:  // Server Auth Challenge
@@ -815,7 +815,7 @@ angular.module('myApp.services', []).
                 if (msg.hasMoreData())
                   fields.maxChannels = msg.nextUint8();
                 console.log(fields);
-                
+
                 // If flag is not set happily, let's disconnect
                 if (fields.flag == 0) {
                   console.log("Server auth failed: " + fields.error + ". Disconnecting.");
@@ -828,7 +828,7 @@ angular.module('myApp.services', []).
                   this.fullUsername = fields.error;
                 }
                 break;
-              
+
               case 0x02:  // Server Config Change Notify
                 console.log("Received a Server Config Change notification.");
                 var fields = {
@@ -838,11 +838,11 @@ angular.module('myApp.services', []).
                 console.log(fields);
                 this.bpm = fields.bpm;
                 this.bpi = fields.bpi;
-                
+
                 // Kick off the local beat timing system
                 if (this._nextIntervalBegin == null)
                   this._beginNewInterval();
-                
+
                 // TODO: Notify user interface
                 if (this._callbacks.onChatMessage) {
                   this._callbacks.onChatMessage({
@@ -852,7 +852,7 @@ angular.module('myApp.services', []).
                   });
                 }
                 break;
-              
+
               case 0x03:  // Server Userinfo Change Notify
                 console.log("Received a Server Userinfo Change notification.");
                 var startOffset = msg._offset;
@@ -866,7 +866,7 @@ angular.module('myApp.services', []).
                     username: msg.nextString(),
                     channelName: msg.nextString()
                   };
-                  
+
                   var pieces = fields.username.split('@', 2);
                   var username = pieces[0];
                   var ip = (pieces.length == 2) ? pieces[1] : "";
@@ -886,7 +886,7 @@ angular.module('myApp.services', []).
                       var channel = new Channel(fields.channelName, fields.volume, fields.pan, this._masterGain);
                       console.log(channel);
                       user.channels[fields.channelIndex] = channel;
-                      
+
                       // Subscribe to this channel, since we just met it
                       if (this.autosubscribe)
                         this.setUsermask([fields.username]);
@@ -906,7 +906,7 @@ angular.module('myApp.services', []).
                   }
                 }
                 break;
-              
+
               case 0x04:  // Server Download Interval Begin
                 var fields = {
                   guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
@@ -916,7 +916,7 @@ angular.module('myApp.services', []).
                   username: msg.nextString()
                 };
                 console.log("Got new Download Interval Begin with username: " + fields.username);
-                
+
                 // If this GUID is already known to us
                 var download = this.downloads.get(fields.guid);
                 if (this.downloads.contains(fields.guid)) {
@@ -935,7 +935,7 @@ angular.module('myApp.services', []).
                   }
                 }
                 break;
-              
+
               case 0x05:  // Server Download Interval Write (receiving some audio)
                 //console.log("Received a Server Download Interval Write notification. Payload size " + length);
                 var fields = {
@@ -960,7 +960,7 @@ angular.module('myApp.services', []).
                   console.log("Tried pushing to guid queue " + fields.guid + " but it's not there!");
                 }
                 break;
-              
+
               case 0xc0:  // Chat Message
                 console.log("Received a Chat Message.");
                 var fields = {
@@ -1005,17 +1005,17 @@ angular.module('myApp.services', []).
                 if (this.status == "authenticated")
                   this._sendKeepalive();
                 break;
-              
+
               default:
                 console.log("Received an unidentifiable message with type " + type + " and payload length " + length + "(" + buf.byteLength + " bytes)");
                 error = true; // This will stop the while-loop
             }
           }
         }
-                
+
         this._shouldPollSocket = true;
       },
-      
+
       // Assemble a Ninjam client message and write it to the server
       _packMessage : function(type, payload) {
         var payloadLength = (payload != null) ? payload.byteLength : 0;
@@ -1023,14 +1023,14 @@ angular.module('myApp.services', []).
         var data = new DataView(buf);
         data.setUint8(0, type);
         data.setUint32(1, payloadLength, true);
-        
+
         // Attach payload
         if (payload != null) {
           var payloadData = new Uint8Array(payload);
           for (var i=0; i<payloadLength; i++)
             data.setUint8(5+i, payloadData[i]);
         }
-        
+
         /* console.log("Here's the packed message as a hex string:");
         var str = "";
         var dv = new DataView(buf);
@@ -1042,18 +1042,18 @@ angular.module('myApp.services', []).
           else if ((i+1) % 8 == 0) str += "  ";
         }
         console.log(str); */
-        
+
         this.socket.send(buf);
         this._lastSendTime = (new Date()).getTime();
       },
-      
+
       // Send a Keepalive message to the server
       _sendKeepalive : function() {
         //console.log("Sending keepalive.");
         this._packMessage(0xFD, null);
       },
-      
+
     });
-    
+
     return new NinjamClient();
   });
