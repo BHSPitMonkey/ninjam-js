@@ -12,7 +12,7 @@ angular.module('stepheneisenhauer.netsockets', []).
     if (typeof require !== 'undefined' && require('net')) {
       return NodeNetSocket;
     }
-    else if (chrome.sockets) {
+    else if (typeof chrome !== 'undefined' && chrome.sockets) {
       return ChromeNetSocket;
     }
     else if (navigator.mozTCPSocket) {
@@ -163,20 +163,27 @@ angular.module('stepheneisenhauer.netsockets', []).
     return ChromeNetSocket;
   }).
   factory('MozNetSocket', function(BaseNetSocket) {
-    var MozNetSocket = function(options) {
-      this.protocol = options.protocol || "tcp";
+    var MozNetSocket = function(options, oncreate) {
+      BaseNetSocket.call(this, options, oncreate);
       this.socket;
-      
       // Just send the oncreate event now, since there is no such action here
-      // TODO: Event
-    }
-    MozNetSocket.prototype = {
-      open: function(host, port) {
-        this.socket = navigator.mozTCPSocket.open(host, port, {binaryType:"arraybuffer"});
-        this.socket.onopen = this.onconnect.bind(this);
-        this.socket.ondata = this.onreceive.bind(this);
-        this.socket.onerror = this.onerror.bind(this);
-        this.socket.onclose = this.onclose.bind(this);
+      this.notify('create', true);
+    };
+    MozNetSocket.prototype = Object.create(BaseNetSocket.prototype);
+    MozNetSocket.prototype.constructor = MozNetSocket;
+    angular.extend(MozNetSocket.prototype, {
+      connect: function(host, port) {
+        switch (this.protocol) {
+          case "tcp":
+            this.socket = navigator.mozTCPSocket.open(host, port, {binaryType:"arraybuffer"});
+            this.socket.onopen = this.onopen.bind(this);
+            this.socket.ondata = this.ondata.bind(this);
+            this.socket.onerror = this.onerror.bind(this);
+            this.socket.onclose = this.onclose.bind(this);
+            break;
+          default:
+            console.log("Not implemented");
+        }
       },
       send: function(data) {
         if (this.socket) {
@@ -186,7 +193,15 @@ angular.module('stepheneisenhauer.netsockets', []).
           // TODO: Error
         }
       },
-      close: function(data) {
+      disconnect: function() {
+        if (this.socketId) {
+          chrome.sockets.tcp.disconnect(this.socketId, this.ondisconnect.bind(this));
+        }
+        else {
+          // TODO: Error
+        }
+      },
+      close: function() {
         if (this.socket) {
           this.socket.close();
         }
@@ -194,18 +209,18 @@ angular.module('stepheneisenhauer.netsockets', []).
           // TODO: Error
         }
       },
-      onconnect: function() {
-        
+      onopen: function(event) {
+        this.notify('connect', true);
       },
-      onreceive: function() {
-        
+      ondata: function(event) {
+        this.notify('receive', event.data);
       },
-      onerror: function() {
-        
+      onerror: function(event) {
+        this.notify('receiveError', "MozTCPSocket error message: " + event.data);
       },
       onclose: function() {
-        
-      }
-    };
+        this.notify('close');
+      },
+    });
     return MozNetSocket;
   });

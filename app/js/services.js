@@ -300,6 +300,8 @@ angular.module('myApp.services', []).
   }).
   factory('NinjamClient', function(NetSocket, MessageReader, MessageBuilder, DownloadManager, Channel, LocalChannel, User, $timeout) {
     var NinjamClient = function() {
+      this.status = "starting";
+
       // Set up audio playback context
       window.AudioContext = window.AudioContext||window.webkitAudioContext;
       this._audioContext = new window.AudioContext();
@@ -351,16 +353,14 @@ angular.module('myApp.services', []).
 //        onClose: this.onSocketClose.bind(this),
       });
 
-      this.socketId;
-      this.status = "starting";
       this._callbacks = {
         onChallenge: null,
         onChatMessage: null,
         onDisconnect: null
       };
-
-      // Set initial state (used between disconnects also)
-      this.reinit = function() {
+    };
+    angular.extend(NinjamClient.prototype, {
+      reinit : function() {
         this.debug = false;         // Causes debug pane to appear in UI
         this.status = "ready";
         this.host = null;
@@ -387,11 +387,8 @@ angular.module('myApp.services', []).
         this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
         this._nextIntervalBegin = null; // setTimeout handle for local interval setup
         this.downloads = new DownloadManager();
-      };
-      //this.reinit();
-    };
-    
-    angular.extend(NinjamClient.prototype, {
+      },
+
       onSocketCreate : function(success) {
         if (success === true) {
           this.reinit();
@@ -427,12 +424,13 @@ angular.module('myApp.services', []).
       _checkKeepalive : function() {
         if (this.status == "authenticated" && (new Date()).getTime() - this._lastSendTime > 3000)
           this._sendKeepalive();
-        
+
         this._checkKeepaliveTimeout = $timeout(this._checkKeepalive.bind(this), 3000);
       },
 
       // Connect to specified Ninjam server
       connect : function(host, username, password, onChallenge) {
+        console.log("Connect called. Status is: " + this.status);
         if (this.status == "ready") {
           this.username = username;
           if (this.anonymous)
@@ -455,7 +453,7 @@ angular.module('myApp.services', []).
           this.status = "connecting";
         }
         else {
-          console.log("Can't connect: Socket not created!");
+          console.log("Can't connect: Socket not created! " + this.status);
         }
       },
       
@@ -470,12 +468,12 @@ angular.module('myApp.services', []).
           
         // Insert username
         msg.appendString(username);
-        
+
         // Insert other fields
         var capabilities = (acceptedAgreement) ? 1 : 0;
         msg.appendUint32(capabilities);
         msg.appendUint32(0x00020000);
-        
+
         if (!msg.hasMoreData())
           console.log("Message appears to be filled.");
         else
@@ -484,22 +482,22 @@ angular.module('myApp.services', []).
         console.log("Sending challenge response. " + msg.buf.byteLength + " bytes.");
         this._packMessage(0x80, msg.buf);
       },
-      
+
       // Set flags (for receiving) for one or more channels. Param is an array.
       setUsermask : function(usermasks) {
         var usernamesLength = 0;
         for (var i=0; i<usermasks.length; i++)
           usernamesLength += (usermasks[i].length + 1); // +1 for NUL
         var msg = new MessageBuilder(usernamesLength + (usermasks.length * 4));
-        
+
         for (var i=0; i<usermasks.length; i++) {
           msg.appendString(usermasks[i]);
           msg.appendUint32(0xFFFFFFFF); // Lazily subscribe to any and all possible channels...
         }
-        
+
         this._packMessage(0x81, msg.buf);
       },
-      
+
       // Tell the server about our channel(s).
       setChannelInfo : function() {
         var allNamesLength = 0;
@@ -515,7 +513,7 @@ angular.module('myApp.services', []).
           msg.appendUint8(1);         // Flags (???)
           //msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
         }
-        
+
         this._packMessage(0x82, msg.buf);
       },
       
@@ -663,12 +661,12 @@ angular.module('myApp.services', []).
         var secondsPerBeat = 60.0 / this.bpm;
         var secondsToNext = secondsPerBeat * this.bpi; // in seconds
         this._nextIntervalCtxTime = this._currentIntervalCtxTime + secondsToNext;
-        
+
         console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + secondsToNext);
-        
+
         // Play all the ready intervals
         this._playAllChannelsNextInterval();
-        
+
         // Schedule metronome beeps for this interval (and the downbeat of the next)
         for (var i=0; i<this.bpi; i++) {
           var bufferSource = this._audioContext.createBufferSource();
@@ -685,7 +683,7 @@ angular.module('myApp.services', []).
               this.currentBeat = (this.currentBeat + 1) % this.bpi;
             }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
         }
-        
+
         // End previous recording
         // TODO
 
@@ -695,7 +693,7 @@ angular.module('myApp.services', []).
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
       },
-      
+
       // Finish and enqueue a particular interval download
       _finishIntervalDownload : function(guid) {
         // Retrieve the data and delete the download from the queue
@@ -1058,116 +1056,4 @@ angular.module('myApp.services', []).
     });
     
     return new NinjamClient();
-  }).
-  factory("$store",function($parse){
-  /**
-   * Global Vars
-   */
-  //var storage = (typeof window.localStorage === 'undefined') ? undefined : window.localStorage,
-  //  supported = !(typeof storage == 'undefined' || typeof window.JSON == 'undefined');
-  var storage = chrome.storage.sync,
-      supported = !(typeof storage == 'undefined' || typeof window.JSON == 'undefined');
-
-  var privateMethods = {
-    /**
-     * Pass any type of a string from the localStorage to be parsed so it returns a usable version (like an Object)
-     * @param res - a string that will be parsed for type
-     * @returns {*} - whatever the real type of stored value was
-     */
-    parseValue: function(res) {
-      var val;
-      try {
-        val = JSON.parse(res);
-        if (typeof val == 'undefined'){
-          val = res;
-        }
-        if (val == 'true'){
-          val = true;
-        }
-        if (val == 'false'){
-          val = false;
-        }
-        if (parseFloat(val) == val && !angular.isObject(val) ){
-          val = parseFloat(val);
-        }
-      } catch(e){
-        val = res;
-      }
-      return val;
-    }
-  };
-  var publicMethods = {
-    /**
-     * Set - let's you set a new localStorage key pair set
-     * @param key - a string that will be used as the accessor for the pair
-     * @param value - the value of the localStorage item
-     * @returns {*} - will return whatever it is you've stored in the local storage
-     */
-    set: function(key,value){
-      if (!supported){
-        try {
-          $.cookie(key, value);
-          return value;
-        } catch(e){
-          console.log('Local Storage not supported, make sure you have the $.cookie supported.');
-        }
-      }
-      var saver = JSON.stringify(value);
-      storage.set({key: value});
-      return privateMethods.parseValue(saver);
-    },
-    /**
-     * Get - let's you get the value of any pair you've stored
-     * @param key - the string that you set as accessor for the pair
-     * @returns {*} - Object,String,Float,Boolean depending on what you stored
-     */
-    get: function(key){
-      if (!supported){
-        try {
-          return privateMethods.parseValue($.cookie(key));
-        } catch(e){
-          return null;
-        }
-      }
-      var item = storage.get(key);
-      return privateMethods.parseValue(item);
-    },
-    /**
-     * Remove - let's you nuke a value from localStorage
-     * @param key - the accessor value
-     * @returns {boolean} - if everything went as planned
-     */
-    remove: function(key) {
-      if (!supported){
-        try {
-          $.cookie(key, null);
-          return true;
-        } catch(e){
-          return false;
-        }
-      }
-      storage.remove(key);
-      return true;
-    },
-    /**
-           * Bind - let's you directly bind a localStorage value to a $scope variable
-           * @param $scope - the current scope you want the variable available in
-           * @param key - the name of the variable you are binding
-           * @param def - the default value (OPTIONAL)
-           * @returns {*} - returns whatever the stored value is
-           */
-          bind: function ($scope, key, def) {
-              def = def || '';
-              if (!publicMethods.get(key)) {
-                  publicMethods.set(key, def);
-              }
-              $parse(key).assign($scope, publicMethods.get(key));
-              $scope.$watch(key, function (val) {
-                  publicMethods.set(key, val);
-              }, true);
-              return publicMethods.get(key);
-          }
-  };
-  return publicMethods;
-});
-
+  });
