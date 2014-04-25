@@ -2,8 +2,9 @@
 # Build zip file for node-webkit at build/app.nw
 ZIPFILE="app.nw"
 
+
 cd `dirname $0`/..
-mkdir -p build
+mkdir -p builds
 rm -f "builds/$ZIPFILE"
 cd app
 

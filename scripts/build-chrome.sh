@@ -4,7 +4,7 @@ ZIPFILE="chrome.zip"
 
 
 cd `dirname $0`/..
-mkdir -p build
+mkdir -p builds
 rm -f "builds/$ZIPFILE"
 cd app
 

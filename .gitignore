@@ -4,3 +4,4 @@ builds/*
 *.log
 *.crx
 *.pem
+node_modules/*
