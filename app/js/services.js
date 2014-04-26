@@ -349,6 +349,7 @@ angular.module('myApp.services', []).
         onConnect: this.onSocketConnect.bind(this),
         onReceive: this.parseMessages.bind(this),
         onSend: this.onSocketSend.bind(this),
+//        onError: this.onSocketError.bind(this),
 //        onDisconnect: this.onSocketDisconnect.bind(this),
 //        onClose: this.onSocketClose.bind(this),
       });

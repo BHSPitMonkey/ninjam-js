@@ -1,14 +1,18 @@
 /*
-* @license
-* angular-net-sockets v0.1
-* (c) 2014 Stephen Eisenhauer http://stepheneisenhauer.com
-* License: MIT
+ * @project angular-net-sockets
+ * @version 0.1
+ * @author Stephen Eisenhauer <bhs2007@gmail.com>
+ * @license MIT
 */
 
 'use strict';
 
 angular.module('stepheneisenhauer.netsockets', []).
-  factory('NetSocket', function (NodeNetSocket, ChromeNetSocket, MozNetSocket) {
+  /**
+   * The factory you should use in your application code. Returns the
+   * appropriate implementation for your platform.
+   */
+  factory('NetSocket', ['NodeNetSocket', 'ChromeNetSocket', 'MozNetSocket', function (NodeNetSocket, ChromeNetSocket, MozNetSocket) {
     if (typeof require !== 'undefined' && require('net')) {
       return NodeNetSocket;
     }
@@ -21,18 +25,29 @@ angular.module('stepheneisenhauer.netsockets', []).
     else {
       // Raise some kind of error
     }
-  }).
+  }]).
+  /**
+   * The base class for all of the platform-specific NetSocket implementations.
+   * Defines a constructor that is shared among all of the subclasses as-is.
+   * Should not be used directly.
+   */
   factory('BaseNetSocket', function() {
-    // Superclass for all platform-specific socket implementations.
-    // Do not use directly.
+    /**
+     * The constructor used by all implementations of this base class.
+     * Sets up all options and callbacks given via the "options" parameter.
+     * @constructor
+     * @param {object} options
+     */
     var BaseNetSocket = function(options) {
       this.protocol = options.protocol || "tcp";
       this.callbacks = {
         create: options['onCreate'],
         connect: options['onConnect'],
         receive: options['onReceive'],
-        receiveError: options['onReceiveError'],
+        error: options['onError'],
         send: options['onSend'],
+        disconnect: options['onDisconnect'],
+        close: options['onClose'],
       };
     };
     BaseNetSocket.prototype = {
@@ -44,25 +59,71 @@ angular.module('stepheneisenhauer.netsockets', []).
     };
     return BaseNetSocket;
   }).
-  factory('NodeNetSocket', function(BaseNetSocket) {
+  /**
+   * The Node.js (node-webkit) implementation using the "net" module.
+   * Should not be used directly.
+   */
+  factory('NodeNetSocket', ['BaseNetSocket', function(BaseNetSocket) {
     var NodeNetSocket = function(options) {
-      this.protocol = options.protocol || "tcp";
+      BaseNetSocket.call(this, options);
       this.net = require('net');
       this.socket;
-      
       // Just send the oncreate event now, since there is no such action here
-      // TODO: Event
-    }
-    NodeNetSocket.prototype = {
-      open: function(host, port) {
-        this.socket = this.net.connect({host: host, port: port}, this.onopen.bind(this));
-      }
+      this.notify('create', true);
     };
+    NodeNetSocket.prototype = Object.create(BaseNetSocket.prototype);
+    NodeNetSocket.prototype.constructor = NodeNetSocket;
+    angular.extend(NodeNetSocket.prototype, {
+      connect: function(host, port) {
+        switch (this.protocol) {
+          case "tcp":
+            this.socket = this.net.connect({host: host, port: port}, this.onconnect.bind(this));
+            this.socket.on('data', this.ondata.bind(this));
+            this.socket.on('end', this.onend.bind(this));
+            this.socket.on('error', this.onerror.bind(this));
+            this.socket.on('close', this.onclose.bind(this));
+            break;
+          default:
+            console.log("Not implemented");
+        }
+      },
+      send: function(data) {
+        this.socket.write(data);
+      },
+      disconnect: function() {
+        this.socket.end();
+      },
+      close: function() {
+        this.socket.destroy();
+      },
+      onconnect: function() {
+        this.notify('connect', true);
+      },
+      ondata: function(data) {
+        this.notify('data', data);
+      },
+      onend: function() {
+        this.notify('disconnect');
+      },
+      onerror: function(error) {
+        this.notify('error', "Node socket error (" + error.name + "): " + error.message);
+      },
+      onclose: function(had_error) {
+        if (had_error === true) {
+          this.notify('error', "Node socket closed due to a transmission error");
+        }
+        this.notify('close');
+      },
+    });
     return NodeNetSocket;
-  }).
-  factory('ChromeNetSocket', function(BaseNetSocket) {
-    var ChromeNetSocket = function(options, oncreate) {
-      BaseNetSocket.call(this, options, oncreate);
+  }]).
+  /**
+   * The Chrome packaged app implementation using chrome.sockets.
+   * Should not be used directly.
+   */
+  factory('ChromeNetSocket', ['BaseNetSocket', function(BaseNetSocket) {
+    var ChromeNetSocket = function(options) {
+      BaseNetSocket.call(this, options);
       this.socketId;
       switch (this.protocol) {
         case "tcp":
@@ -138,7 +199,7 @@ angular.module('stepheneisenhauer.netsockets', []).
         this.notify('receive', info.data);
       },
       onreceiveerror: function(info) {
-        this.notify('receiveError', "Chrome result code: " + info.resultCode);
+        this.notify('error', "Chrome result code: " + info.resultCode);
         chrome.sockets.tcp.getInfo(this.socketId, function (socketInfo) {
           if (socketInfo.connected === false) {
             this.notify('disconnect');
@@ -161,10 +222,14 @@ angular.module('stepheneisenhauer.netsockets', []).
       },
     });
     return ChromeNetSocket;
-  }).
-  factory('MozNetSocket', function(BaseNetSocket) {
-    var MozNetSocket = function(options, oncreate) {
-      BaseNetSocket.call(this, options, oncreate);
+  }]).
+  /**
+   * The Firefox packaged app implementation using mozTCPSocket.
+   * Should not be used directly.
+   */
+  factory('MozNetSocket', ['BaseNetSocket', function(BaseNetSocket) {
+    var MozNetSocket = function(options) {
+      BaseNetSocket.call(this, options);
       this.socket;
       // Just send the oncreate event now, since there is no such action here
       this.notify('create', true);
@@ -194,12 +259,7 @@ angular.module('stepheneisenhauer.netsockets', []).
         }
       },
       disconnect: function() {
-        if (this.socketId) {
-          chrome.sockets.tcp.disconnect(this.socketId, this.ondisconnect.bind(this));
-        }
-        else {
-          // TODO: Error
-        }
+        // TODO!
       },
       close: function() {
         if (this.socket) {
@@ -216,11 +276,11 @@ angular.module('stepheneisenhauer.netsockets', []).
         this.notify('receive', event.data);
       },
       onerror: function(event) {
-        this.notify('receiveError', "MozTCPSocket error message: " + event.data);
+        this.notify('error', "MozTCPSocket error message: " + event.data);
       },
       onclose: function() {
         this.notify('close');
       },
     });
     return MozNetSocket;
-  });
+  }]);
