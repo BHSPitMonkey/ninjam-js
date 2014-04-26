@@ -1,4 +1,17 @@
 {
+  "main": "index.html",
   "name": "Ninjam JS",
-  "main": "index.html"
+  "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
+  "version": "0.2.2",
+  "window": {
+    "title": "Ninjam JS",
+    "icon": "img/icon-16.png",
+    "toolbar": false,
+    "frame": true,
+    "width": 800,
+    "height": 700,
+    "position": "mouse",
+    "min_width": 320,
+    "min_height": 320
+  }
 }
