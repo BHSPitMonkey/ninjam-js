@@ -315,7 +315,7 @@ angular.module('myApp.services', []).
       this._hiClickBuffer = null;
       this._loClickBuffer = null;
       var requestLo = new XMLHttpRequest();
-      requestLo.open("GET", "snd/met-lo.wav", true);
+      requestLo.open("GET", "snd/met-lo.ogg", true);
       requestLo.responseType = "arraybuffer";
       requestLo.onload = function() {
         // Decode asynchronously
@@ -328,7 +328,7 @@ angular.module('myApp.services', []).
       }.bind(this);
       requestLo.send();
       var requestHi = new XMLHttpRequest();
-      requestHi.open("GET", "snd/met-hi.wav", true);
+      requestHi.open("GET", "snd/met-hi.ogg", true);
       requestHi.responseType = "arraybuffer";
       requestHi.onload = function() {
         // Decode asynchronously
