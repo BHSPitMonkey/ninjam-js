@@ -1,6 +1,6 @@
 {
   "main": "index.html",
-  "name": "Ninjam JS",
+  "name": "ninjam-js",
   "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
   "version": "0.2.2",
   "window": {
