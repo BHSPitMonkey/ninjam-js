@@ -175,9 +175,26 @@ angular.module('myApp.services', []).
     };
     return DownloadManager;
   }).
+  /**
+   * LocalChannels encapsulate local audio input devices, their audio legwork,
+   * and the way they are presented to the server.
+   *
+   * In general, you will have one LocalChannel per recording device, all
+   * with enabled=false by default, and the user will turn on the one(s) they
+   * want to expose to the server. Once turned on, the user will click a
+   * Transmit button for the channel when they are ready to start broadcasting.
+   */
   factory('LocalChannel', function($$rAF, $rootScope) {
-    function LocalChannel(name, outputNode) {
+    /**
+     * @construct
+     * @param {string} name The channel's display name.
+     * @param {AudioNode} sourceNode The AudioNode for the input stream.
+     * @param {AudioNode} outputNode The AudioNode the audio should leave
+     *     through for local playback.
+     */
+    function LocalChannel(name, sourceNode, outputNode) {
       this.setName(name);
+      this.enabled = false;
       this.localMute = true;
       this.inputMute = false;
       this.localGain = outputNode.context.createGain();
@@ -189,6 +206,8 @@ angular.module('myApp.services', []).
       this.inputGain = outputNode.context.createGain();
       this.inputGain.gain.value = 0.8;
       this.inputGain.connect(this.analyser);
+      this.sourceNode = sourceNode;
+      this.sourceNode.connect(this.inputGain);
       this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
       this.frequencyDataLastUpdate = 0;
       this.maxDecibelValue = 0; // Should map from 0 to 100
@@ -204,11 +223,14 @@ angular.module('myApp.services', []).
       $$rAF(this.frequencyUpdateLoop);
     }
     LocalChannel.prototype = {
-      setName: function(name) {
+      setName : function(name) {
         this.name = name;
       },
-      getInputNode: function() {
-        return this.inputGain;
+      setEnabled : function(state) {
+        if (this.enabled === state)
+          return;
+        // TODO: Do stuff
+        this.enabled = state;
       },
       setInputMute : function(state) {
         this.inputMute = state;
@@ -309,7 +331,6 @@ angular.module('myApp.services', []).
       this._masterGain.connect(this._audioContext.destination);
       this._metronomeGain = this._audioContext.createGain();
       this._metronomeGain.connect(this._masterGain);
-      this.microphoneSourceNode;
 
       // Set up metronome sounds
       this._hiClickBuffer = null;
@@ -380,7 +401,7 @@ angular.module('myApp.services', []).
         this.setMasterMute(false);
         this.setMetronomeMute(false);
 
-        this._localChannels = [new LocalChannel('Microphone', this._masterGain)];
+        this.localChannels = [];
         this.setMicrophoneInputMute(false);
 
         this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
@@ -502,17 +523,17 @@ angular.module('myApp.services', []).
       // Tell the server about our channel(s).
       setChannelInfo : function() {
         var allNamesLength = 0;
-        for (var i=0; i<this._localChannels.length; i++) {
-          allNamesLength += (this._localChannels[i].name.length + 1); // +1 for NUL char
+        for (var i=0; i<this.localChannels.length; i++) {
+          allNamesLength += (this.localChannels[i].name.length + 1); // +1 for NUL char
         }
-        var msg = new MessageBuilder(2 + allNamesLength + (4 * this._localChannels.length));
+        var msg = new MessageBuilder(2 + allNamesLength + (4 * this.localChannels.length));
         msg.appendUint16(4);  // Channel parameter size
-        for (var i=0; i<this._localChannels.length; i++) {
-          msg.appendString(this._localChannels[i].name);  // Channel name
+        for (var i=0; i<this.localChannels.length; i++) {
+          msg.appendString(this.localChannels[i].name);  // Channel name
           msg.appendInt16(0);         // Volume (0dB)
           msg.appendInt8(0);          // Pan
           msg.appendUint8(1);         // Flags (???)
-          //msg.appendZeros(paramLength - 5 - this._localChannels[i].name.length);
+          //msg.appendZeros(paramLength - 5 - this.localChannels[i].name.length);
         }
 
         this._packMessage(0x82, msg.buf);
@@ -559,8 +580,8 @@ angular.module('myApp.services', []).
 
       setMicrophoneInputMute : function(state) {
         this.microphoneInputMute = state;
-        for (var i=0; i<this._localChannels.length; i++) {
-          this._localChannels[i].setInputMute(state);
+        for (var i=0; i<this.localChannels.length; i++) {
+          this.localChannels[i].setInputMute(state);
         }
       },
 
@@ -604,14 +625,16 @@ angular.module('myApp.services', []).
           var sourceInfo = sourceInfos[i];
           if (sourceInfo.kind === 'audio') {
             var name = sourceInfo.label || 'Audio device';
-            // TODO
+            // TODO: Call getUserMedia for every audio source
           }
         }
       },
 
       gotUserMedia : function(stream) {
-        this.microphoneSourceNode = this._audioContext.createMediaStreamSource(stream);
-        this.microphoneSourceNode.connect(this._localChannels[0].getInputNode());
+        var trackLabel = stream.getAudioTracks()[0].label;
+        var source = this._audioContext.createMediaStreamSource(stream);
+        var channel = new LocalChannel(trackLabel, source, this._masterGain);
+        this.localChannels.push(channel);
       },
 
       // Converts an array buffer to a string asynchronously
