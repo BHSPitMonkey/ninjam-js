@@ -734,8 +734,6 @@ angular.module('myApp.services', []).
 
       // Parses an ArrayBuffer received from a Ninjam server
       parseMessages : function(buf) {
-        this._shouldPollSocket = false;
-
         if (this._msgBacklog != null) {
           //console.log("Fetching backlog (" + this._msgBacklog.byteLength + ")");
           //console.log("Merging with new buffer (" + buf.byteLength + ")");
@@ -1013,8 +1011,6 @@ angular.module('myApp.services', []).
             }
           }
         }
-
-        this._shouldPollSocket = true;
       },
 
       // Assemble a Ninjam client message and write it to the server
