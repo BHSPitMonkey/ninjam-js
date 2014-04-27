@@ -5,7 +5,7 @@
   "version": "0.2.2",
   "window": {
     "title": "Ninjam JS",
-    "icon": "img/icon-16.png",
+    "icon": "img/icon-128.png",
     "toolbar": false,
     "frame": true,
     "width": 800,
