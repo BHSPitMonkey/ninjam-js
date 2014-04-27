@@ -203,9 +203,12 @@ angular.module('myApp.services', []).
       this.analyser = outputNode.context.createAnalyser();
       this.analyser.fftSize = 32;
       this.analyser.connect(this.localGain);
+      this.encoderNode = outputNode.context.createScriptProcessor(1024);
+      this.encoderNode.onaudioprocess = this.onEncoderProcess.bind(this);
+      this.encoderNode.connect(this.analyser);
       this.inputGain = outputNode.context.createGain();
       this.inputGain.gain.value = 0.8;
-      this.inputGain.connect(this.analyser);
+      this.inputGain.connect(this.encoderNode);
       this.sourceNode = sourceNode;
       this.sourceNode.connect(this.inputGain);
       this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
@@ -246,10 +249,45 @@ angular.module('myApp.services', []).
       toggleLocalMute : function() {
         this.setLocalMute(!this.localMute);
       },
+      /**
+       * Called by the ScriptProcessorNode (this.encoderNode) when there is new
+       * audio data to be processed.
+       * @param {AudioProcessingEvent} event
+       */
+      onEncoderProcess : function(event) {
+        // Loop through the input channels
+        for (var channel = 0; channel < event.inputBuffer.numberOfChannels; channel++) {
+          var inData = event.inputBuffer.getChannelData(channel);
+          var outData = event.outputBuffer.getChannelData(channel);
+          // Copy the input directly to the output unchanged
+          outData.set(inData);
+          // Give the input data to the ogg encoder for processing
+          // TODO
+          // Loop through the 1024 samples
+          //for (var sample = 0; sample < event.inputBuffer.length; sample++) {
+            // The time at which the sample will play
+            //var sampleTime = context.currentTime + outputBuffer.duration * sample / outputBuffer.length;
+            // Set the data in the output buffer for each sample
+            //outData[sample] = volume * Math.sin(sampleTime * frequency * Math.PI * 2);
+          //}
+        }
+      },
     }
     return LocalChannel;
   }).
+  /**
+   * Channel objects represent remote channels belonging to other users on the
+   * server. They contain the audio nodes that handle the downloaded audio for
+   * that channel, including per-channel volume controls.
+   */
   factory('Channel', function($$rAF, $rootScope) {
+    /**
+     * @constructor
+     * @param name The channel's display name as specified by the server.
+     * @param volume The "volume" field that comes from the server. Not used.
+     * @param pan The "pan" field that comes from the server. Not really used.
+     * @param outputNode The AudioNode this channel should pipe its audio into.
+     */
     function Channel(name, volume, pan, outputNode) {
       this.update(name, volume, pan);
       this.readyIntervals = [];
