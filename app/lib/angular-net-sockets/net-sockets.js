@@ -88,7 +88,10 @@ angular.module('stepheneisenhauer.netsockets', []).
         }
       },
       send: function(data) {
-        this.socket.write(data);
+        // Convert to Node.js Buffer object
+        var view = new Uint8Array(data);
+        var buffer = new Buffer(view);
+        this.socket.write(buffer);
       },
       disconnect: function() {
         this.socket.end();
@@ -100,7 +103,11 @@ angular.module('stepheneisenhauer.netsockets', []).
         this.notify('connect', true);
       },
       ondata: function(data) {
-        this.notify('data', data);
+        // Convert from Node.js Buffer object
+        var ab = new ArrayBuffer(data.length);
+        var view = new Uint8Array(ab);
+        view.set(data);
+        this.notify('receive', ab);
       },
       onend: function() {
         this.notify('disconnect');
