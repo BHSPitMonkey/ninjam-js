@@ -8,4 +8,4 @@ mkdir -p builds
 rm -f "builds/$ZIPFILE"
 cd app
 
-zip -r "../builds/$ZIPFILE" manifest.json index.html css img js lib partials snd
+zip -r "../builds/$ZIPFILE" manifest.json index.html main.js css img modules lib snd

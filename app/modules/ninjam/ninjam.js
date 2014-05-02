@@ -1,8 +1,9 @@
 'use strict';
+/**
+ * Module for NINJAM components
+ */
 
-/* Services */
-
-angular.module('myApp.services', []).
+angular.module('myApp.ninjam', []).
   factory('MessageReader', function() {
     function MessageReader(buf) {
       this._data = new DataView(buf);

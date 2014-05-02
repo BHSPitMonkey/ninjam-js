@@ -1,17 +1,16 @@
 'use strict';
 
-
 // Declare app level module which depends on filters, and services
 angular.module('myApp', ['ngRoute',
                          'ui.bootstrap',
                          'ui.keypress',
                          'stepheneisenhauer.netsockets',
-                         'myApp.filters',
-                         'myApp.services',
-                         'myApp.directives',
-                         'myApp.controllers']).
+                         'myApp.app',
+                         'myApp.ninjam',
+                         'myApp.browser',
+                         'myApp.jam']).
   config(['$routeProvider', function($routeProvider) {
-    $routeProvider.when('/', {templateUrl: 'partials/browser.html'});
-    $routeProvider.when('/#jam', {templateUrl: 'partials/jam.html'});
+    $routeProvider.when('/', {templateUrl: 'modules/browser/browser.html'});
+    $routeProvider.when('/#jam', {templateUrl: 'modules/jam/jam.html'});
     $routeProvider.otherwise({redirectTo: '/'});
   }]);
