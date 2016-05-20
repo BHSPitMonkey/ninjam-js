@@ -2,7 +2,7 @@
   "main": "index.html",
   "name": "ninjam-js",
   "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
-  "version": "0.2.2",
+  "version": "0.3.1",
   "window": {
     "title": "Ninjam JS",
     "icon": "img/icon-128.png",
