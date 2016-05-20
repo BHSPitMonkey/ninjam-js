@@ -16,12 +16,11 @@ as a packaged app for Firefox OS.
 
 Ninjam JS is still a work in progress. The current code is capable of
 connecting to servers, sending and receiving chat messages (including votes),
-and listening to audio channels from other users. Recording and uploading of
-audio is coming soon.
+listening to audio channels from other users, and transmitting audio.
 
 ## Get the Alpha
 
-You can install a work-in-progress build using Chrome, Chromium, or Chrome OS 
+You can install a work-in-progress build using Chrome, Chromium, or Chrome OS
 by going here:
 
 https://chrome.google.com/webstore/detail/ninjam-js/hgcicpalplclhnoephgjpmoknnnmdfje
