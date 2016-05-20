@@ -105,6 +105,14 @@ angular.module('myApp.ninjam', []).
         if (!length)
           this.appendUint8(0);
       },
+      appendArrayBuffer : function(data) {
+        var dv = new DataView(data);
+        var length = dv.byteLength;
+        for (var i=0; i<length; i++) {
+          this._data.setUint8(this._offset + i, dv.getUint8(i));
+        }
+        this._offset += length;
+      },
       appendZeros : function(count) {
         for (var i=0; i<count; i++) {
           this.appendUint8(0);
@@ -188,16 +196,22 @@ angular.module('myApp.ninjam', []).
   factory('LocalChannel', function($$rAF, $rootScope) {
     /**
      * @construct
-     * @param {string} name The channel's display name.
-     * @param {AudioNode} sourceNode The AudioNode for the input stream.
+     * @param {MediaStream} stream An audio stream granted by getUserMedia.
      * @param {AudioNode} outputNode The AudioNode the audio should leave
      *     through for local playback.
+     * @param {AudioContext} context The master audio context
+     * @param {function} onBeginUpload Callback to notify Client of new GUID
+     * @param {function} onEncodedChunk Callback that encoded Vorbis chunks can
+     *     be returned to.
      */
-    function LocalChannel(name, sourceNode, outputNode) {
-      this.setName(name);
-      this.enabled = false;
-      this.localMute = true;
-      this.inputMute = false;
+    function LocalChannel(stream, outputNode, context, onBeginUpload, onEncodedChunk) {
+      var sourceNode = context.createMediaStreamSource(stream);
+      this.setName(stream.getAudioTracks()[0].label);
+      this.enabled = true; // Decides if this channel is advertised to the server TODO: Default to false, maybe persist last known config
+      this.transmit = false; // Decides if this channel should send audio to the server (starting at the next interval at earliest)
+      this.activeTransmit = false; // Decides if this channel should be transmitting NOW (not to be directly manipulated by user)
+      this.localMute = true; // Decides if the user should NOT hear their own audio
+      this.inputMute = false; // Decides if this channel should temporarily only output silence
       this.localGain = outputNode.context.createGain();
       this.localGain.gain.value = 0;
       this.localGain.connect(outputNode);
@@ -215,6 +229,10 @@ angular.module('myApp.ninjam', []).
       this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
       this.frequencyDataLastUpdate = 0;
       this.maxDecibelValue = 0; // Should map from 0 to 100
+      this._context = context;
+      this._prevGuid = null;
+      this._guid = null;
+      this._finalizeInterval = false;
       this.frequencyUpdateLoop = function(timestamp) {
         if (timestamp > this.frequencyDataLastUpdate + 10) {
           this.frequencyDataLastUpdate = timestamp;
@@ -225,6 +243,15 @@ angular.module('myApp.ninjam', []).
         $$rAF(this.frequencyUpdateLoop);
       }.bind(this);
       $$rAF(this.frequencyUpdateLoop);
+
+      // Set up Vorbis encoder
+      this._onBeginUpload = onBeginUpload;
+      this._onEncodedChunk = onEncodedChunk;
+      this._encoder = new VorbisEncoder();
+      this._encoder.ondata = this.onEncoderData.bind(this);
+      //this._encoder.onfinish = this.onEncoderFinish.bind(this);
+      // Copying these params from VorbisMediaRecorder implementation:
+      this._encoder.init(this.sourceNode.channelCount, this._context.sampleRate, 0.4);
     }
     LocalChannel.prototype = {
       setName : function(name) {
@@ -250,28 +277,72 @@ angular.module('myApp.ninjam', []).
       toggleLocalMute : function() {
         this.setLocalMute(!this.localMute);
       },
+      toggleTransmit : function() {
+        this.transmit = !this.transmit;
+
+        // Only 'off' toggles have an instant effect on activeTransmit status ('on' will wait for next interval)
+        if (!this.transmit) {
+          this.activeTransmit = false;
+
+          // Tell the server we're done uploading for this interval
+          this._onEncodedChunk(this.guid, new ArrayBuffer(0), true);
+        }
+      },
+      newInterval : function() {
+        // If transmit was requested during the last interval, actually begin transmitting now
+        if (this.transmit === true) {
+          this.activeTransmit = true;
+        }
+
+        // Reinitialize the encoder
+        this._encoder.finish();
+        this._encoder.init(this.sourceNode.channelCount, this._context.sampleRate, 0.4);
+
+        // Indicate to the encoder's ondata handler to send next chunk as "final"
+        this._finalizeInterval = true;
+
+        // Refresh our GUID
+        this._prevGuid = this._guid;
+        this._guid = crypto.getRandomValues(new Uint8Array(16));
+        this._onBeginUpload(this._guid);
+      },
       /**
        * Called by the ScriptProcessorNode (this.encoderNode) when there is new
        * audio data to be processed.
        * @param {AudioProcessingEvent} event
        */
       onEncoderProcess : function(event) {
+        var buffers = [];
+        var inputBuffer = event.inputBuffer;
+
         // Loop through the input channels
         for (var channel = 0; channel < event.inputBuffer.numberOfChannels; channel++) {
-          var inData = event.inputBuffer.getChannelData(channel);
+          var inData = inputBuffer.getChannelData(channel);
           var outData = event.outputBuffer.getChannelData(channel);
-          // Copy the input directly to the output unchanged
+
+          // Copy the input directly to the output buffer unchanged (to keep the pipeline going)
           outData.set(inData);
-          // Give the input data to the ogg encoder for processing
-          // TODO
-          // Loop through the 1024 samples
-          //for (var sample = 0; sample < event.inputBuffer.length; sample++) {
-            // The time at which the sample will play
-            //var sampleTime = context.currentTime + outputBuffer.duration * sample / outputBuffer.length;
-            // Set the data in the output buffer for each sample
-            //outData[sample] = volume * Math.sin(sampleTime * frequency * Math.PI * 2);
-          //}
+
+          // Copy this channel's input buffer data to buffers array to be encoded
+          if (this.activeTransmit) {
+            buffers.push(inputBuffer.getChannelData(channel).slice().buffer);
+          }
         }
+
+        // Send data to our VorbisEncoder
+        if (this.activeTransmit) {
+          this._encoder.encode(buffers, inputBuffer.length, inputBuffer.numberOfChannels);
+        }
+      },
+      /**
+       * Called by VorbisEncoder instance as encoded chunks become available
+       */
+      onEncoderData : function(data) {
+        let guid = this._finalizeInterval ? this._prevGuid : this._guid;
+        if (guid !== null) {
+          this._onEncodedChunk(guid, data, this._finalizeInterval);
+        }
+        this._finalizeInterval = false;
       },
     }
     return LocalChannel;
@@ -396,7 +467,7 @@ angular.module('myApp.ninjam', []).
           requestHi.response,
           function(buffer) {
               this._hiClickBuffer = buffer;
-          }.bind(this)    
+          }.bind(this)
         );
       }.bind(this);
       requestHi.send();
@@ -439,6 +510,7 @@ angular.module('myApp.ninjam', []).
         this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
         this.setMasterMute(false);
         this.setMetronomeMute(false);
+        this.connected = false;
 
         this.localChannels = [];
         this.setMicrophoneInputMute(false);
@@ -462,9 +534,45 @@ angular.module('myApp.ninjam', []).
 
       onSocketConnect : function(success) {
         if (success === true) {
-          // Try to open the microphone
+          this.connected = true;
+
+          // Try to enumerate recording devices (TODO)
+          // if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+          //   console.error("enumerateDevices() not supported.");
+          //   return;
+          // }
+
+          // List all audio inputs (TODO)
+          // navigator.mediaDevices.enumerateDevices()
+          // .then(function(devices) {
+          //   devices.forEach(function(device) {
+          //     // TODO: Only care about ones where device.kind is 'audioinput'
+          //     console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+          //   });
+          // })
+          // .catch(function(err) {
+          //   console.error(err.name + ": " + err.message);
+          // });
+
+          // Try to open the default microphone
           console.log("Calling getUserMedia");
-          navigator.webkitGetUserMedia({'audio':true}, this.gotUserMedia.bind(this));
+          navigator.webkitGetUserMedia(
+            {
+              audio: {
+                optional: [
+                  {'googEchoCancellation': false},
+                  {'googAutoGainControl': false},
+                  {'googAutoGainControl2': false},
+                  {'googNoiseSuppression': false},
+                  {'googHighpassFilter': false},
+                  {'googTypingNoiseDetection': false},
+                  {'echoCancellation': false},
+                ]
+              }
+            },
+            this.gotUserMedia.bind(this),
+            this.gotUserMediaError.bind(this)
+          );
         }
         else {
           console.log("Socket open attempt failed");
@@ -591,6 +699,7 @@ angular.module('myApp.ninjam', []).
           this._checkKeepaliveTimeout = null;
         }
         this.socket.disconnect();
+        this.connected = false;
         // TODO: Kill all the audio
         this.downloads.clearAll();
         if (this._callbacks.onDisconnect) {
@@ -659,21 +768,42 @@ angular.module('myApp.ninjam', []).
         this._packMessage(0xc0, msg.buf);
       },
 
-      gotUserMediaSources: function(sourceInfos) {
-        for (var i=0; i<sourceInfos.length; i++) {
-          var sourceInfo = sourceInfos[i];
-          if (sourceInfo.kind === 'audio') {
-            var name = sourceInfo.label || 'Audio device';
-            // TODO: Call getUserMedia for every audio source
-          }
-        }
+      // TODO: Need to figure out local channel index if more than one exist
+      announceUploadIntervalBegin : function(guid) {
+        var msg = new MessageBuilder(25);
+        msg.appendArrayBuffer(guid.buffer);
+        msg.appendUint32(0); // Just set estimated size to 0
+        msg.appendString("OGGv", 4);
+        msg.appendUint8(0); // TODO: Channel index
+        this._packMessage(0x83, msg.buf);
+      },
+
+      // Send a locally-recorded chunk to the server
+      // data : ArrayBuffer
+      // TODO: Need to figure out local channel index if more than one exist
+      gotLocalEncodedChunk : function(guid, data, final) {
+        //console.log("gotLocalEncodedChunk, length " + data.byteLength, guid, data, final);
+        console.log("Writing final chunk for interval");
+        var msg = new MessageBuilder(17 + data.byteLength);
+        msg.appendArrayBuffer(guid.buffer);
+        msg.appendUint8(final ? 1 : 0); // Flags (is this even right?)
+        msg.appendArrayBuffer(data);
+        this._packMessage(0x84, msg.buf);
       },
 
       gotUserMedia : function(stream) {
-        var trackLabel = stream.getAudioTracks()[0].label;
-        var source = this._audioContext.createMediaStreamSource(stream);
-        var channel = new LocalChannel(trackLabel, source, this._masterGain);
+        var channel = new LocalChannel(
+          stream,
+          this._masterGain,
+          this._audioContext,
+          this.announceUploadIntervalBegin.bind(this),
+          this.gotLocalEncodedChunk.bind(this)
+        );
         this.localChannels.push(channel);
+      },
+
+      gotUserMediaError : function(e) {
+        console.error("Call to webkitGetUserMedia failed :(", e);
       },
 
       // Converts an array buffer to a string asynchronously
@@ -747,11 +877,10 @@ angular.module('myApp.ninjam', []).
             }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
         }
 
-        // End previous recording
-        // TODO
-
-        // Start new recording
-        // TODO
+        // Tell LocalChannels about the new interval
+        this.localChannels.forEach(channel => {
+          channel.newInterval();
+        });
 
         // Call this function again at the start of the next interval
         this._nextIntervalBegin = $timeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
@@ -1077,6 +1206,8 @@ angular.module('myApp.ninjam', []).
 
       // Assemble a Ninjam client message and write it to the server
       _packMessage : function(type, payload) {
+        if (!this.connected) return;
+
         var payloadLength = (payload != null) ? payload.byteLength : 0;
         var buf = new ArrayBuffer(payloadLength + 5); // Header uses 5 bytes
         var data = new DataView(buf);

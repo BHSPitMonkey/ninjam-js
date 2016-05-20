@@ -10,7 +10,7 @@
           <div class="channels">
             <div ng-repeat="channel in ninjam.localChannels" class="channel">
               <div class="btn-group">
-                <button class="btn btn-default" tooltip="Not yet available">Transmit</button>
+                <button class="btn btn-default" ng-class="{true: 'btn-primary', false: 'btn-default'}[channel.transmit]" ng-click="channel.toggleTransmit()" tooltip="Sorta available">Transmit</button>
                 <button class="btn" ng-class="{true: 'btn-default', false: 'btn-primary'}[channel.localMute]" ng-click="channel.toggleLocalMute()">Listen</button>
                 <button class="btn btn-default" disabled><progressbar class="volume-bar" type="danger" animate="false" value="channel.maxDecibelValue"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
@@ -29,7 +29,7 @@
             <div ng-repeat="channel in user.channels" class="channel">
               <div class="btn-group">
                 <button class="btn" ng-class="{true: 'btn-primary', false: 'btn-default'}[channel.localMute]" ng-click="channel.toggleMute()">M</button>
-                <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[channel.localSolo]" ng-click="channel.localSolo = !channel.localSolo">S</button>                    
+                <button class="btn" ng-class="{true: 'btn-danger', false: 'btn-default'}[channel.localSolo]" ng-click="channel.localSolo = !channel.localSolo">S</button>
                 <button class="btn btn-default" disabled><progressbar class="volume-bar" animate="false" value="channel.maxDecibelValue"></progressbar></button>
                 <button class="btn btn-default" disabled>{{ channel.name }}</button>
               </div>
@@ -54,7 +54,7 @@
       </div-->
     </div>
   </div>
-  
+
   <div class="sidebar" ng-controller="ChatPane">
     <h2>Chat</h2>
     <div class="messages panel" id="messages">
