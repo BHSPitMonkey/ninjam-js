@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "build": {
+    "app-bundle-id": "com.stepheneisenhauer.ninjam-js",
+    "app-category-type": "public.app-category.music"
+  },
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "pack": "build",
+    "dist": "build",
+    "start": "electron app"
+  },
+  "devDependencies": {
+    "electron-builder": "^3.23.0",
+    "electron-prebuilt": "^1.2.0"
+  }
+}

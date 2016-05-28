@@ -5,3 +5,5 @@ builds/*
 *.crx
 *.pem
 node_modules/*
+app/node_modules/*
+app/build/*

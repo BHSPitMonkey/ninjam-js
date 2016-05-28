@@ -9,7 +9,7 @@ musicians to collaborate (by jamming!) over the Internet.
 
 Ninjam JS is built using web technologies (JavaScript, HTML, CSS) and acts as a
 NINJAM client, connecting to servers just like the official C++ client. It can
-run as a standalone application using Node-WebKit, as a Chrome App, or (almost)
+run as a standalone application using Electron, as a Chrome App, or (almost)
 as a packaged app for Firefox OS.
 
 ## Development Status
