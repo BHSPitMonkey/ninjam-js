@@ -17,13 +17,15 @@ class LocalChannels extends React.Component {
   }
 
   componentDidMount() {
-    // Set up Ninjam callback
-    //this.context.ninjam.onChatMessage = this.onNinjamMessage.bind(this);
   }
 
   render() {
+    let header = <span>
+      <span>{this.context.ninjam.username}</span>
+      <span style={{float: 'right'}}>(You)</span>
+    </span>;
     return (
-      <Panel header={this.context.ninjam.username + " (You)"} bsStyle="primary">
+      <Panel header={header} bsStyle="primary">
         {this.context.ninjam.localChannels.map((lc, i) => {
           return <ButtonGroup key={i}>
             <Button onClick={() => {lc.toggleTransmit(); this.forceUpdate();}} bsStyle={lc.transmit ? "primary" : "default"}>Transmit</Button>

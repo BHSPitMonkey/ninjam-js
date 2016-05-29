@@ -16,13 +16,11 @@ class Chat extends React.Component {
 
     // Prebind custom methods
     this.onComposeKeyDown = this.onComposeKeyDown.bind(this);
-
-
   }
 
   componentDidMount() {
     // Set up Ninjam callback
-    this.context.ninjam.onChatMessage = this.onNinjamMessage.bind(this);
+    this.context.ninjam.on('chatMessage', this.onNinjamMessage.bind(this));
   }
 
   /**
@@ -77,8 +75,10 @@ class Chat extends React.Component {
       }
 
       // Insert new message
-      this.state.messages.push(<Message type={type} username={username} content={content} key={numMessages} />);
-      this.forceUpdate();
+      if (type) {
+        this.state.messages.push(<Message type={type} username={username} content={content} key={numMessages} />);
+        this.forceUpdate();
+      }
 
       // TODO: Autoscroll messages div
   }

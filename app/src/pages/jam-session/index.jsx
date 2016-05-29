@@ -32,7 +32,7 @@ class JamSession extends React.Component {
 
   render() {
     return (
-      <div>
+      <div id="jam-container">
         <Navbar fixedTop>
           <Navbar.Header>
             <Navbar.Brand>
@@ -46,9 +46,9 @@ class JamSession extends React.Component {
             <Nav pullRight>
               <ButtonToolbar>
                 <ButtonGroup>
-                  <Button><img src="img/ic_metronome_black.svg" /></Button>
-                  <Button><img src="img/ic_mic_mute_black.svg" /></Button>
-                  <Button><img src="img/ic_speaker_mute_black.svg" width="16" /></Button>
+                  <Button bsStyle={this.context.ninjam.metronomeMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMetronomeMute(); this.forceUpdate();}}><img src="img/ic_metronome_black.svg" /></Button>
+                  <Button bsStyle={this.context.ninjam.microphoneInputMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMicrophoneInputMute(); this.forceUpdate();}}><img src="img/ic_mic_mute_black.svg" /></Button>
+                  <Button bsStyle={this.context.ninjam.masterMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMasterMute(); this.forceUpdate();}}><img src="img/ic_speaker_mute_black.svg" width="16" /></Button>
                 </ButtonGroup>
                 <ButtonGroup>
                   <DropdownButton title={<img src="img/ic_more_black.svg" />} id="bg-nested-dropdown">

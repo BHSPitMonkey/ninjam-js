@@ -17,8 +17,8 @@ class RemoteUsers extends React.Component {
   }
 
   componentDidMount() {
-    // Set up Ninjam callback
-    //this.context.ninjam.onChatMessage = this.onNinjamMessage.bind(this);
+    // Set up Ninjam callback (re-render whenever there's a chat message)
+    this.context.ninjam.on('chatMessage', () => {this.forceUpdate()});
   }
 
   render() {
@@ -33,12 +33,14 @@ class RemoteUsers extends React.Component {
           return <Panel header={header} key={username}>
             {Object.keys(user.channels).map((key) => {
               let channel = user.channels[key];
-              return <ButtonGroup key={key}>
-                <Button>M</Button>
-                <Button>S</Button>
-                <Button>(TODO)</Button>
-                <Button disabled>{channel.name}</Button>
-              </ButtonGroup>;
+              return <div className="channel" key={key}>
+                <ButtonGroup>
+                  <Button>M</Button>
+                  <Button>S</Button>
+                  <Button>(TODO)</Button>
+                  <Button disabled>{channel.name}</Button>
+                </ButtonGroup>
+              </div>;
             })}
           </Panel>;
         })}

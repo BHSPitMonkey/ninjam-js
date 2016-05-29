@@ -7,6 +7,8 @@ export default class CustomServerForm extends React.Component {
 
     this.state = {
     };
+
+    this.onSubmit = this.onSubmit.bind(this);
   }
 
   /**
@@ -15,7 +17,13 @@ export default class CustomServerForm extends React.Component {
    */
   onSubmit(event) {
     event.preventDefault();
-    console.log("Form was submitted.");
+
+    let host = document.getElementById('host').value;
+    let user = document.getElementById('username').value;
+    let pass = document.getElementById('password').value;
+
+    // Tell server browser our choice
+    this.props.onSelect(host, user, pass);
   }
 
   render() {

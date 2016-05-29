@@ -21,11 +21,13 @@ class ServerBrowser extends React.Component {
 
   /**
    * Handles a child component selecting a NINJAM server to connect to.
-   * @param {object} server - Object with server info.
+   * @param {string} host
+   * @param {string} username
+   * @param {string} password
    */
-  onSelect(server) {
-    console.log("Want to connect to server: ", server, this.context.ninjam);
-    this.context.ninjam.connect(server.host, 'NinjamJS', '', this.onReceiveServerChallenge);
+  onSelect(host, username, password) {
+    console.log("Connecting to server %s as %s", host, username);
+    this.context.ninjam.connect(host, username, password, this.onReceiveServerChallenge);
   }
 
   onReceiveServerChallenge() {

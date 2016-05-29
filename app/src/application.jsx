@@ -19,7 +19,7 @@ class Application extends React.Component {
     // Private members
     this.ninjam = new NinjamClient();
     console.log(this.ninjam);
-    this.ninjam.onDisconnect = this.handleDisconnect;
+    this.ninjam.on('disconnect', this.handleDisconnect);
   }
   handleDisconnect() {
     console.log("App got disconnect");

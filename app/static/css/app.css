@@ -6,6 +6,18 @@ html, body, #container, #container > div, #container > div > div {
   margin-top: 6px;
 }
 
+.navbar .container {
+  width: 100% !important;
+}
+
+.navbar-brand {
+  text-transform: lowercase;
+}
+
+.navbar-right {
+  margin-right: 0 !important;
+}
+
 #server-categories .tab-content {
   max-height: 400px;
   overflow: auto;
@@ -23,6 +35,10 @@ html, body, #container, #container > div, #container > div > div {
 .public-server-list .list-group-item:first-child {
   border-top-style: none;
   border-radius: 0;
+}
+
+#jam-container {
+  background: #eee;
 }
 
 #jam {
@@ -50,6 +66,23 @@ html, body, #container, #container > div, #container > div > div {
 
 #jam > #users-channels h2 {
   color: #aaa;
+}
+
+#jam > #users-channels .panel .btn-group {
+  margin-bottom: 5px;
+}
+
+#jam > #users-channels .panel .btn-group:last-child {
+  margin-bottom: 0;
+}
+
+#jam > #users-channels .channel {
+  display: block;
+  margin-bottom: 5px;
+}
+
+#jam > #users-channels .channel:last-child {
+  margin-bottom: 0;
 }
 
 #jam > #chat {
@@ -146,6 +179,10 @@ html, body, #container, #container > div, #container > div > div {
 
 /* Too narrow to support columns */
 @media all and (max-width: 640px) {
+  #jam {
+    height: auto;
+  }
+
   #jam, #page {
       flex-direction: column;
   }
@@ -160,8 +197,7 @@ html, body, #container, #container > div, #container > div > div {
     flex-basis: 50%;
   }
 
-  #jam > chat, header, footer {
-    min-height: 50px;
-    max-height: 50px;
+  #jam > #chat {
+    height: 300px;
   }
 }

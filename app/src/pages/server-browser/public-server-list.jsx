@@ -74,10 +74,7 @@ export default class PublicServerList extends React.Component {
   select(i) {
     if (this.state.selected === i) {
       // Connect to servers[i]
-      // TODO
-      if (this.props.onSelect) {
-        this.props.onSelect(this.state.servers[i]);
-      }
+      this.props.onSelect(this.state.servers[i].host, 'NinjamJS'); // TODO: Ask user for name
     } else {
       // Mark row i as selected
       this.setState({selected: i});

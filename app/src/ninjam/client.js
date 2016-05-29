@@ -1,4 +1,5 @@
 import { SHA1 } from 'crypto-js';
+import EventEmitter from 'events';
 import NetSocket from '../net-socket';
 import DownloadManager from './download-manager';
 import MessageReader from './message-reader';
@@ -65,9 +66,9 @@ export default class NinjamClient {
       //onClose: this.onSocketClose.bind(this),
     });
 
-    this.onChallenge = null;
-    this.onChatMessage = null;
-    this.onDisconnect = null;
+    // Set up Event Emitter (for callbacks)
+    this._emitter = new EventEmitter();
+    this.on = this._emitter.on.bind(this._emitter);
   }
 
   /**
@@ -194,7 +195,7 @@ export default class NinjamClient {
       if (this.anonymous)
         username = "anonymous:" + username;
       this.passHash = SHA1(username + ':' + password).toString(); // Pass 1/2
-      this.onChallenge = onChallenge;
+      this.on('challenge', onChallenge);
 
       // Split the host string (e.g. hostname:port) into hostname and port
       var pieces = host.split(":");
@@ -297,9 +298,7 @@ export default class NinjamClient {
     this.connected = false;
     // TODO: Kill all the audio
     this.downloads.clearAll();
-    if (this.onDisconnect) {
-      this.onDisconnect(reason);
-    }
+    this._emitter.emit('disconnect', reason);
     this.reinit();
   }
 
@@ -585,7 +584,7 @@ export default class NinjamClient {
             this.passHash = SHA1(this.passHash + fields.challenge);  // Pass 2/2
 
             // Tell the UI about this challenge
-            this.onChallenge(fields);
+            this._emitter.emit('challenge', fields);
             break;
 
           case 0x01:  // Server Auth Reply
@@ -629,13 +628,11 @@ export default class NinjamClient {
               this._beginNewInterval();
 
             // Notify user interface
-            if (typeof this.onChatMessage == "function") {
-              this.onChatMessage({
-                command: 'BPMBPI',
-                arg1: fields.bpm,
-                arg2: fields.bpi
-              });
-            }
+            this._emitter.emit('chatMessage', {
+              command: 'BPMBPI',
+              arg1: fields.bpm,
+              arg2: fields.bpi
+            });
             break;
 
           case 0x03:  // Server Userinfo Change Notify
@@ -779,9 +776,8 @@ export default class NinjamClient {
                 break;
             }
 
-            // Inform callback
-            if (this.onChatMessage)
-              this.onChatMessage(fields);
+            // Inform callbacks
+            this._emitter.emit('chatMessage', fields);
             break;
 
           case 0xFD:  // Keepalive
