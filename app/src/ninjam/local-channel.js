@@ -68,6 +68,10 @@ export default class LocalChannel {
     //this._encoder.onfinish = this.onEncoderFinish.bind(this);
     // Copying these params from VorbisMediaRecorder implementation:
     this._encoder.init(this.sourceNode.channelCount, this._context.sampleRate, 0.4);
+
+    // Pre-bind methods
+    this.toggleLocalMute = this.toggleLocalMute.bind(this);
+    this.toggleTransmit = this.toggleTransmit.bind(this);
   }
   setName(name) {
     this.name = name;
@@ -100,7 +104,7 @@ export default class LocalChannel {
       this.activeTransmit = false;
 
       // Tell the server we're done uploading for this interval
-      this._onEncodedChunk(this.guid, new ArrayBuffer(0), true);
+      this._onEncodedChunk(this._guid, new ArrayBuffer(0), true);
     }
   }
   newInterval() {

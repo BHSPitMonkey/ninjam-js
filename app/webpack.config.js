@@ -1,11 +1,13 @@
 var webpack = require('webpack');
 var childProcess = require('child_process');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
+
 module.exports = {
   entry: "./src/entry.jsx",
   devtool: "#source-map",
   output: {
-    path: __dirname + "/build/js",
-    filename: "bundle.js",
+    path: __dirname + "/build",
+    filename: "js/bundle.js",
     sourceMapFilename: "[file].map"
   },
   module: {
@@ -23,6 +25,9 @@ module.exports = {
   },
   plugins: [
     new webpack.NoErrorsPlugin(),
+    new CopyWebpackPlugin([
+        { from: 'static' }
+    ]),
     // Tells React to use production mode
     // new webpack.DefinePlugin({
     //   'process.env':{

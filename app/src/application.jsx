@@ -1,6 +1,5 @@
 import React from 'react';
 import { Router, Route, Link } from 'react-router'
-import { Navbar } from 'react-bootstrap';
 import { Client as NinjamClient } from './ninjam';
 
 /**
@@ -14,28 +13,27 @@ class Application extends React.Component {
     this.state = {
     };
 
+    // Prebind custom methods
+    this.handleDisconnect = this.handleDisconnect.bind(this);
+
     // Private members
     this.ninjam = new NinjamClient();
     console.log(this.ninjam);
-
-    // Prebind custom methods
-    // TODO
+    this.ninjam.onDisconnect = this.handleDisconnect;
+  }
+  handleDisconnect() {
+    console.log("App got disconnect");
+    this.context.router.push('/');
   }
   getChildContext() {
     return {
+      router: this.context.router,
       ninjam: this.ninjam,
     };
   }
   render() {
     return (
       <div>
-        <Navbar>
-          <Navbar.Header>
-            <Navbar.Brand>
-              <a href="#">Ninjam JS</a>
-            </Navbar.Brand>
-          </Navbar.Header>
-        </Navbar>
         {this.props.children}
       </div>
     );

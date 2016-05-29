@@ -65,11 +65,9 @@ export default class NinjamClient {
       //onClose: this.onSocketClose.bind(this),
     });
 
-    this._callbacks = {
-      onChallenge: null,
-      onChatMessage: null,
-      onDisconnect: null
-    };
+    this.onChallenge = null;
+    this.onChatMessage = null;
+    this.onDisconnect = null;
   }
 
   /**
@@ -93,7 +91,7 @@ export default class NinjamClient {
     this.maxChannels = null;    // Max channels per user allowed by server
     this.topic = null;
     this.autosubscribe = true;  // Currently breaks us because we are bad at sockets
-    this.setMasterMute(false);
+    this.setMasterMute(true);
     this.setMetronomeMute(false);
     this.connected = false;
 
@@ -196,7 +194,7 @@ export default class NinjamClient {
       if (this.anonymous)
         username = "anonymous:" + username;
       this.passHash = SHA1(username + ':' + password).toString(); // Pass 1/2
-      this._callbacks.onChallenge = onChallenge;
+      this.onChallenge = onChallenge;
 
       // Split the host string (e.g. hostname:port) into hostname and port
       var pieces = host.split(":");
@@ -244,6 +242,9 @@ export default class NinjamClient {
 
     console.log("Sending challenge response. " + msg.buf.byteLength + " bytes.");
     this._packMessage(0x80, msg.buf);
+
+    // Re-enable sounds
+    this.setMasterMute(false);
   }
 
   // Set flags (for receiving) for one or more channels. Param is an array.
@@ -296,8 +297,8 @@ export default class NinjamClient {
     this.connected = false;
     // TODO: Kill all the audio
     this.downloads.clearAll();
-    if (this._callbacks.onDisconnect) {
-      this._callbacks.onDisconnect(reason);
+    if (this.onDisconnect) {
+      this.onDisconnect(reason);
     }
     this.reinit();
   }
@@ -584,7 +585,7 @@ export default class NinjamClient {
             this.passHash = SHA1(this.passHash + fields.challenge);  // Pass 2/2
 
             // Tell the UI about this challenge
-            this._callbacks.onChallenge(fields);
+            this.onChallenge(fields);
             break;
 
           case 0x01:  // Server Auth Reply
@@ -627,9 +628,9 @@ export default class NinjamClient {
             if (this._nextIntervalBegin == null)
               this._beginNewInterval();
 
-            // TODO: Notify user interface
-            if (this._callbacks.onChatMessage) {
-              this._callbacks.onChatMessage({
+            // Notify user interface
+            if (typeof this.onChatMessage == "function") {
+              this.onChatMessage({
                 command: 'BPMBPI',
                 arg1: fields.bpm,
                 arg2: fields.bpi
@@ -779,8 +780,8 @@ export default class NinjamClient {
             }
 
             // Inform callback
-            if (this._callbacks.onChatMessage)
-              this._callbacks.onChatMessage(fields);
+            if (this.onChatMessage)
+              this.onChatMessage(fields);
             break;
 
           case 0xFD:  // Keepalive

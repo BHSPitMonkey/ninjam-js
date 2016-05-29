@@ -1,0 +1,167 @@
+html, body, #container, #container > div, #container > div > div {
+  height: 100%;
+}
+
+.navbar .btn-toolbar {
+  margin-top: 6px;
+}
+
+#server-categories .tab-content {
+  max-height: 400px;
+  overflow: auto;
+  border-bottom: 1px solid #eee;
+}
+
+.public-server-list .label {
+  margin-right: 3px;
+}
+
+.public-server-list .list-group {
+  margin-bottom: 0;
+}
+
+.public-server-list .list-group-item:first-child {
+  border-top-style: none;
+  border-radius: 0;
+}
+
+#jam {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  padding-top: 50px;
+  display: flex;
+  flex-flow: row;
+}
+
+#jam h2 {
+  margin: 0;
+  margin-bottom: 5px;
+  font-size: 20px;
+  text-transform: lowercase;
+}
+
+#jam > #users-channels {
+  padding: 10px;
+  background: #f8f8f8;
+  flex: 3 1 70%;
+  order: 2;
+}
+
+#jam > #users-channels h2 {
+  color: #aaa;
+}
+
+#jam > #chat {
+  padding: 10px;
+  background: #eee;
+  flex: 1 6 30%;
+  order: 3;
+}
+
+#jam > #chat h2 {
+  color: #999;
+}
+
+#chat {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-content: stretch;
+  align-items: flex-start;
+}
+
+#chat .messages {
+  order: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+  background: white;
+  margin-bottom: 10px;
+  color: black;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-user-select: text;
+  padding-top: 5px;
+}
+
+#chat .messages .message {
+  padding: 5px 10px;
+  position: relative;
+}
+
+#chat .messages .message.msg .icon {
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  background: #eee;
+  float: left;
+  margin-right: 10px;
+  position: absolute;
+}
+
+#chat .messages .message.msg .username {
+  font-size: 10px;
+  font-weight: bold;
+  padding-left: 42px;
+}
+
+#chat .messages .message.msg .content {
+  padding-left: 42px;
+  white-space: pre-wrap;
+}
+
+#chat .messages .message.join {
+  background: #e1fde1;
+  color: black;
+  font-size: 12px;
+}
+
+#chat .messages .message.part {
+  color: #aaa;
+  font-size: 12px;
+}
+
+#chat .messages .message.topic {
+  color: #666;
+  font-size: 12px;
+}
+
+#chat .entry-area {
+  order: 1;
+  flex: 0 0 50px;
+  align-self: stretch;
+  height: 50px;
+}
+
+#chat .entry-area textarea {
+  height: 50px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  resize: none;
+}
+
+/* Too narrow to support columns */
+@media all and (max-width: 640px) {
+  #jam, #page {
+      flex-direction: column;
+  }
+
+  #jam h2 {
+    font-size: 12px;
+  }
+
+  #jam > #users-channels, #jam > #chat {
+    /* Return them to document order */
+    order: 0;
+    flex-basis: 50%;
+  }
+
+  #jam > chat, header, footer {
+    min-height: 50px;
+    max-height: 50px;
+  }
+}

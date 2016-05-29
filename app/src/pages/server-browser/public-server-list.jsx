@@ -1,6 +1,6 @@
 import React from 'react';
 import xhr from 'xhr';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { ListGroup, ListGroupItem, Label } from 'react-bootstrap';
 
 export default class PublicServerList extends React.Component {
   constructor(props) {
@@ -86,9 +86,14 @@ export default class PublicServerList extends React.Component {
 
   render() {
     return (
-      <ListGroup>
+      <ListGroup className="public-server-list">
         {this.state.servers.map((server, i) => {
-          return <ListGroupItem header={server.host} active={i===this.state.selected} onClick={e => {this.select(i)}} key={i}>{server.status} {server.userCount} {server.users}</ListGroupItem>
+          let users = (server.users) ? server.users.join(", ") : "";
+          return <ListGroupItem header={server.host} active={i===this.state.selected} onClick={e => {this.select(i)}} key={i}>
+            <Label>{server.status}</Label>
+            <Label>{server.userCount}</Label>
+            <Label>{users}</Label>
+          </ListGroupItem>
         })}
       </ListGroup>
     );
