@@ -1,12 +1,5 @@
 import React from 'react';
-//import Autolinker from 'autolinker';
 import ReactMarkdown from 'react-markdown';
-
-// const autolinkerOptions = {
-//   phone: false,
-//   twitter: false,
-//   hashtag: false,
-// };
 
 class Message extends React.Component {
   constructor(props) {
@@ -37,7 +30,8 @@ class Message extends React.Component {
       case 'msg':
         if (this.props.username) {
           icon = <div className="icon"></div>;
-          username = <div className="username">{this.props.username}</div>;
+          username = this.props.username.split("@", 1)[0];
+          username = <div className="username">{username}</div>;
         } else {
           // Sometimes we get a msg with no username (voting system). Display like a TOPIC.
           typeClass = 'topic';
@@ -52,13 +46,11 @@ class Message extends React.Component {
       case 'topic':
         content = 'Topic is: ' + content;
         break;
-      case 'bpmbpi':
+      default:
         typeClass = 'topic'; // Use same class as topics
-        break;
     }
 
     let className = "message " + typeClass;
-    //content = Autolinker.link(content, autolinkerOptions);
 
     return (
       <div className={className}>

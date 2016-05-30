@@ -76,6 +76,15 @@ body {
   color: #aaa;
 }
 
+#jam > #users-channels .panel .ip {
+  float: right;
+  color: #aaa;
+}
+
+#jam > #users-channels .panel.panel-primary .ip {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 #jam > #users-channels .panel .btn-group {
   margin-bottom: 5px;
 }
@@ -104,9 +113,33 @@ body {
   transition: none;
 }
 
+.bpmbpi-metronome {
+  margin-left: 25px;
+}
+
+.bpmbpi-display {
+  width: 50px;
+  display: inline-block;
+  margin-top: 13px;
+  font-size: 16px;
+  text-align: right;
+}
+
+.bpmbpi-display > div {
+  margin: -6px 0;
+}
+
+.bpmbpi-display > div > span {
+  font-size: 10px;
+  font-weight: bold;
+  text-align: right;
+}
+
 .metronome.progress {
   width: 400px;
-  margin: 16px 0 0 25px;
+  margin: 16px 0 0 10px;
+  display: inline-block;
+  vertical-align: top;
 }
 
 .metronome .progress-bar {
@@ -154,6 +187,7 @@ body {
 }
 
 #chat .messages .message.msg .icon {
+  display: none; /* Remove after implementing identicons */
   height: 32px;
   width: 32px;
   border-radius: 50%;
@@ -166,11 +200,11 @@ body {
 #chat .messages .message.msg .username {
   font-size: 10px;
   font-weight: bold;
-  padding-left: 42px;
+  /* padding-left: 42px; Uncomment after implementing identicons */
 }
 
 #chat .messages .message.msg .content {
-  padding-left: 42px;
+  /* padding-left: 42px; Uncomment after implementing identicons */
   white-space: pre-wrap;
 }
 

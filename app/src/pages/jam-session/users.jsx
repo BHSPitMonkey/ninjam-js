@@ -1,6 +1,7 @@
 import React from 'react';
-import { Panel, Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
+import { Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
 import VolumeIndicator from './volume-indicator.jsx';
+import UserPanel from './user-panel.jsx';
 
 class RemoteUsers extends React.Component {
   constructor(props) {
@@ -36,11 +37,7 @@ class RemoteUsers extends React.Component {
       <div>
         {Object.keys(this.context.ninjam.users).map((username) => {
           let user = this.context.ninjam.users[username];
-          let header = <span>
-            <span>{user.name}</span>
-            <span style={{float: 'right'}}>{user.ip}</span>
-          </span>;
-          return <Panel header={header} key={username}>
+          return <UserPanel name={user.name} ip={user.ip} key={user.name}>
             {Object.keys(user.channels).map((key) => {
               let channel = user.channels[key];
               return <div className="channel" key={key}>
@@ -52,7 +49,7 @@ class RemoteUsers extends React.Component {
                 </ButtonGroup>
               </div>;
             })}
-          </Panel>;
+          </UserPanel>;
         })}
       </div>
     );

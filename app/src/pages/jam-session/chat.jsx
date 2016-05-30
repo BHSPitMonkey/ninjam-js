@@ -20,6 +20,11 @@ class Chat extends React.Component {
   }
 
   componentDidMount() {
+    // Insert a dummy message
+    let initialMsgText = `Connected to ${this.context.ninjam.host}:${this.context.ninjam.port}`;
+    this.state.messages.push(<Message type="system" content={initialMsgText} key={0} />);
+    this.forceUpdate();
+
     // Subscribe to Ninjam callbacks
     this.context.ninjam.on('chatMessage', this.onNinjamMessage);
   }

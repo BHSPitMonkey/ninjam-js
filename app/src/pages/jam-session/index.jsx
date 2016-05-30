@@ -53,7 +53,7 @@ class JamSession extends React.Component {
                 </ButtonGroup>
                 <ButtonGroup>
                   <DropdownButton title={<img src="img/ic_more_black.svg" />} id="bg-nested-dropdown">
-                    {// <MenuItem eventKey="1">Toggle Debug Panel</MenuItem> }
+                    {/* <MenuItem eventKey="1">Toggle Debug Panel</MenuItem> */}
                     <MenuItem eventKey="2" onClick={this.disconnect}>Leave Server</MenuItem>
                   </DropdownButton>
                 </ButtonGroup>

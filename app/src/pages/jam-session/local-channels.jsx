@@ -1,6 +1,7 @@
 import React from 'react';
-import { Panel, Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
+import { Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
 import VolumeIndicator from './volume-indicator.jsx';
+import UserPanel from './user-panel.jsx';
 
 class LocalChannels extends React.Component {
   constructor(props) {
@@ -21,12 +22,8 @@ class LocalChannels extends React.Component {
   }
 
   render() {
-    let header = <span>
-      <span>{this.context.ninjam.username}</span>
-      <span style={{float: 'right'}}>(You)</span>
-    </span>;
     return (
-      <Panel header={header} bsStyle="primary">
+      <UserPanel name={this.context.ninjam.username} ip="(You)" local>
         {this.context.ninjam.localChannels.map((lc, i) => {
           return <ButtonGroup key={i}>
             <Button onClick={() => {lc.toggleTransmit(); this.forceUpdate();}} bsStyle={lc.transmit ? "primary" : "default"}>Transmit</Button>
@@ -35,7 +32,7 @@ class LocalChannels extends React.Component {
             <Button disabled>{lc.name}</Button>
           </ButtonGroup>;
         })}
-      </Panel>
+      </UserPanel>
     );
   }
 }
