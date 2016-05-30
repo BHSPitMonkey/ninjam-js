@@ -1,6 +1,7 @@
 import React from 'react';
 import xhr from 'xhr';
 import { ListGroup, ListGroupItem, Label } from 'react-bootstrap';
+import LoginModal from './login-modal.jsx';
 
 export default class PublicServerList extends React.Component {
   constructor(props) {
@@ -24,6 +25,7 @@ export default class PublicServerList extends React.Component {
 
     this.refreshList = this.refreshList.bind(this);
     this.select = this.select.bind(this);
+    this.onLoginResponse = this.onLoginResponse.bind(this);
 
     this.refreshList();
   }
@@ -73,26 +75,43 @@ export default class PublicServerList extends React.Component {
    */
   select(i) {
     if (this.state.selected === i) {
-      // Connect to servers[i]
-      this.props.onSelect(this.state.servers[i].host, 'NinjamJS'); // TODO: Ask user for name
+
     } else {
       // Mark row i as selected
       this.setState({selected: i});
     }
   }
 
+  /**
+   * Called by LoginModal when user submits login info or cancels.
+   * @param {boolean} submitted
+   * @param {string} host
+   * @param {string} username
+   * @param {string} password
+   */
+  onLoginResponse(submitted, host, username, password) {
+    this.setState({selected: -1});
+    if (submitted) {
+      // Connect to servers[i]
+      this.props.onSelect(host, username, password);
+    }
+  }
+
   render() {
     return (
-      <ListGroup className="public-server-list">
-        {this.state.servers.map((server, i) => {
-          let users = (server.users) ? server.users.join(", ") : "";
-          return <ListGroupItem header={server.host} active={i===this.state.selected} onClick={e => {this.select(i)}} key={i}>
-            <Label>{server.status}</Label>
-            <Label>{server.userCount}</Label>
-            <Label>{users}</Label>
-          </ListGroupItem>
-        })}
-      </ListGroup>
+      <div>
+        <ListGroup className="public-server-list">
+          {this.state.servers.map((server, i) => {
+            let users = (server.users) ? server.users.join(", ") : "";
+            return <ListGroupItem header={server.host} active={i===this.state.selected} onClick={e => {this.select(i)}} key={i}>
+              <Label>{server.status}</Label>
+              <Label>{server.userCount}</Label>
+              <Label>{users}</Label>
+            </ListGroupItem>
+          })}
+        </ListGroup>
+        <LoginModal show={this.state.selected >= 0} server={this.state.servers[this.state.selected]} onResponse={this.onLoginResponse} public />
+      </div>
     );
   }
 }

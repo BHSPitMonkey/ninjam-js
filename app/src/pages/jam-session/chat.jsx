@@ -37,7 +37,6 @@ class Chat extends React.Component {
   componentDidUpdate() {
     // Auto-scroll chat box after an update
     if (this.messagesDiv) {
-      console.log("messagesDiv", this.messagesDiv);
       this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
     }
   }

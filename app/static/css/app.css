@@ -113,12 +113,8 @@ body {
   transition: none;
 }
 
-.bpmbpi-metronome {
-  margin-left: 25px;
-}
-
 .bpmbpi-display {
-  width: 50px;
+  width: 70px;
   display: inline-block;
   margin-top: 13px;
   font-size: 16px;
