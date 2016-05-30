@@ -2,6 +2,7 @@ import React from 'react';
 import { Navbar, Tabs, Tab } from 'react-bootstrap';
 import PublicServerList from './public-server-list.jsx';
 import CustomServerForm from './custom-server-form.jsx';
+import AgreementModal from './agreement-modal.jsx';
 
 class ServerBrowser extends React.Component {
   constructor(props) {
@@ -9,6 +10,7 @@ class ServerBrowser extends React.Component {
 
     // Default state
     this.state = {
+      agreementTerms: "",
     };
 
     // Private members
@@ -17,6 +19,19 @@ class ServerBrowser extends React.Component {
     // Prebind custom methods
     this.onSelect = this.onSelect.bind(this);
     this.onReceiveServerChallenge = this.onReceiveServerChallenge.bind(this);
+    this.onAgreementResponse = this.onAgreementResponse.bind(this);
+    this.handleDisconnect = this.handleDisconnect.bind(this);
+  }
+
+  componentDidMount() {
+    // Subscribe to Ninjam callbacks
+    this.context.ninjam.on('disconnect', this.handleDisconnect);
+  }
+
+  componentWillUnmount() {
+    // Unsubscribe from Ninjam callbacks
+    this.context.ninjam.removeListener('disconnect', this.handleDisconnect);
+
   }
 
   /**
@@ -30,19 +45,37 @@ class ServerBrowser extends React.Component {
     this.context.ninjam.connect(host, username, password, this.onReceiveServerChallenge);
   }
 
-  onReceiveServerChallenge() {
-    // TODO: Ask user if they want to accept terms
+  /**
+   * Called by NinjamClient when server sends a connect challenge.
+   * @param {Object} fields
+   */
+  onReceiveServerChallenge(fields) {
+    // Ask user if they want to accept terms
+    this.setState({agreementTerms: fields.licenseAgreement});
+  }
 
-    // Accept terms
-    this.context.ninjam.respondToChallenge(true);
-    // Tell app to change to jam view
-    this.context.router.push('/jam');
+  /**
+   * Called by AgreementModal when user accepts or rejects terms.
+   * @param {bool} response - True if user accepted agreement terms.
+   */
+  onAgreementResponse(response) {
+    this.context.ninjam.respondToChallenge(response);
+    this.setState({agreementTerms: ""});
+    if (response) {
+      // Tell app to change to jam view
+      this.context.router.push('/jam');
+    }
+  }
+
+  handleDisconnect() {
+    // Hide agreement modal
+    this.setState({agreementTerms: ""});
   }
 
   render() {
     return (
       <div>
-        <Navbar fixedTop>
+        <Navbar fixedTop fluid>
           <Navbar.Header>
             <Navbar.Brand>
               <a href="#">Ninjam JS</a>
@@ -63,6 +96,7 @@ class ServerBrowser extends React.Component {
             </Tab>
           </Tabs>
         </div>
+        <AgreementModal terms={this.state.agreementTerms} onResponse={this.onAgreementResponse} />
       </div>
     );
   }

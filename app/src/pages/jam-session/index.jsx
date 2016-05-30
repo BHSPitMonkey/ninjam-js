@@ -3,6 +3,7 @@ import { Navbar, Nav, NavDropdown, MenuItem, NavItem, ButtonToolbar, ButtonGroup
 import Chat from './chat.jsx';
 import LocalChannels from './local-channels.jsx';
 import RemoteUsers from './users.jsx';
+import Metronome from './metronome.jsx';
 
 class JamSession extends React.Component {
   constructor(props) {
@@ -33,7 +34,7 @@ class JamSession extends React.Component {
   render() {
     return (
       <div id="jam-container">
-        <Navbar fixedTop>
+        <Navbar fixedTop fluid>
           <Navbar.Header>
             <Navbar.Brand>
               <a href="#">Ninjam JS</a>
@@ -41,7 +42,7 @@ class JamSession extends React.Component {
           </Navbar.Header>
           <Navbar.Collapse>
             <Nav>
-              <div>Metronome</div>
+              <Metronome ninjam={this.context.ninjam} />
             </Nav>
             <Nav pullRight>
               <ButtonToolbar>
@@ -52,7 +53,7 @@ class JamSession extends React.Component {
                 </ButtonGroup>
                 <ButtonGroup>
                   <DropdownButton title={<img src="img/ic_more_black.svg" />} id="bg-nested-dropdown">
-                    <MenuItem eventKey="1">Toggle Debug Panel</MenuItem>
+                    {// <MenuItem eventKey="1">Toggle Debug Panel</MenuItem> }
                     <MenuItem eventKey="2" onClick={this.disconnect}>Leave Server</MenuItem>
                   </DropdownButton>
                 </ButtonGroup>

@@ -2,20 +2,20 @@ html, body, #container, #container > div, #container > div > div {
   height: 100%;
 }
 
+body {
+  font-family: open_sansregular;
+}
+
 .navbar .btn-toolbar {
   margin-top: 6px;
 }
 
-.navbar .container {
-  width: 100% !important;
+.navbar .container-fluid .navbar-right {
+  margin-right: 0 !important;
 }
 
 .navbar-brand {
   text-transform: lowercase;
-}
-
-.navbar-right {
-  margin-right: 0 !important;
 }
 
 #server-categories .tab-content {
@@ -35,6 +35,13 @@ html, body, #container, #container > div, #container > div > div {
 .public-server-list .list-group-item:first-child {
   border-top-style: none;
   border-radius: 0;
+}
+
+.agreement-modal .well {
+  white-space: pre;
+  overflow: auto;
+  line-height: 110%;
+  font-size: 12px;
 }
 
 #jam-container {
@@ -62,6 +69,7 @@ html, body, #container, #container > div, #container > div > div {
   background: #f8f8f8;
   flex: 3 1 70%;
   order: 2;
+  overflow-y: auto;
 }
 
 #jam > #users-channels h2 {
@@ -83,6 +91,26 @@ html, body, #container, #container > div, #container > div > div {
 
 #jam > #users-channels .channel:last-child {
   margin-bottom: 0;
+}
+
+#jam > #users-channels .btn .progress {
+  width: 50px;
+  margin-bottom: 0;
+  height: 17px;
+  transition:none;
+}
+
+#jam > #users-channels .btn .progress-bar {
+  transition: none;
+}
+
+.metronome.progress {
+  width: 400px;
+  margin: 16px 0 0 25px;
+}
+
+.metronome .progress-bar {
+  transition: none;
 }
 
 #jam > #chat {
@@ -175,6 +203,7 @@ html, body, #container, #container > div, #container > div > div {
   border-radius: 4px;
   width: 100%;
   resize: none;
+  padding: 4px 6px;
 }
 
 /* Too narrow to support columns */

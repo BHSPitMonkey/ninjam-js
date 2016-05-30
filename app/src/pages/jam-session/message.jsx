@@ -1,4 +1,12 @@
 import React from 'react';
+//import Autolinker from 'autolinker';
+import ReactMarkdown from 'react-markdown';
+
+// const autolinkerOptions = {
+//   phone: false,
+//   twitter: false,
+//   hashtag: false,
+// };
 
 class Message extends React.Component {
   constructor(props) {
@@ -50,13 +58,27 @@ class Message extends React.Component {
     }
 
     let className = "message " + typeClass;
+    //content = Autolinker.link(content, autolinkerOptions);
 
     return (
       <div className={className}>
         {icon}
         {username}
         <div className="content">
-          {content}
+          <ReactMarkdown
+            source={content}
+            escapeHtml={true}
+            allowedTypes={[
+              'Text',
+              'Link',
+              'Emph',
+              'Code',
+              'Strong',
+              'Softbreak',
+            ]}
+            softBreak="br"
+            unwrapDisallowed={true}
+          />
         </div>
       </div>
     );

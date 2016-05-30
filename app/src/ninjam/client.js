@@ -69,6 +69,7 @@ export default class NinjamClient {
     // Set up Event Emitter (for callbacks)
     this._emitter = new EventEmitter();
     this.on = this._emitter.on.bind(this._emitter);
+    this.removeListener = this._emitter.removeListener.bind(this._emitter);
   }
 
   /**
@@ -463,12 +464,15 @@ export default class NinjamClient {
       bufferSource.start(clickTime);
 
       // Update the currentBeat property at these times as well
-      if (i == 0)
+      if (i == 0) {
         this.currentBeat = 0;
-      else
+        this._emitter.emit('beat', this.currentBeat);
+      } else {
         setTimeout(function() {
           this.currentBeat = (this.currentBeat + 1) % this.bpi;
+          this._emitter.emit('beat', this.currentBeat);
         }.bind(this), (clickTime - this._currentIntervalCtxTime) * 1000);
+      }
     }
 
     // Tell LocalChannels about the new interval
@@ -585,6 +589,7 @@ export default class NinjamClient {
 
             // Tell the UI about this challenge
             this._emitter.emit('challenge', fields);
+            this._emitter.removeAllListeners('challenge');
             break;
 
           case 0x01:  // Server Auth Reply
@@ -687,6 +692,8 @@ export default class NinjamClient {
                 }
               }
             }
+            // Inform callbacks
+            this._emitter.emit('userInfoChange', fields);
             break;
 
           case 0x04:  // Server Download Interval Begin

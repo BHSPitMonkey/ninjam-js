@@ -1,5 +1,6 @@
 import React from 'react';
-import { Panel, Button, ButtonGroup } from 'react-bootstrap';
+import { Panel, Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
+import VolumeIndicator from './volume-indicator.jsx';
 
 class RemoteUsers extends React.Component {
   constructor(props) {
@@ -13,12 +14,21 @@ class RemoteUsers extends React.Component {
     // TODO
 
     // Prebind custom methods
-    // TODO
+    this.onNinjamUserInfoChange = this.onNinjamUserInfoChange.bind(this);
   }
 
   componentDidMount() {
-    // Set up Ninjam callback (re-render whenever there's a chat message)
-    this.context.ninjam.on('chatMessage', () => {this.forceUpdate()});
+    // Subscribe to Ninjam callbacks
+    this.context.ninjam.on('userInfoChange', this.onNinjamUserInfoChange);
+  }
+
+  componentWillUnmount() {
+    // Unsubscribe from Ninjam callbacks
+    this.context.ninjam.removeListener('userInfoChange', this.onNinjamUserInfoChange);
+  }
+
+  onNinjamUserInfoChange() {
+    this.forceUpdate();
   }
 
   render() {
@@ -35,9 +45,9 @@ class RemoteUsers extends React.Component {
               let channel = user.channels[key];
               return <div className="channel" key={key}>
                 <ButtonGroup>
-                  <Button>M</Button>
+                  <Button onClick={() => {channel.toggleMute(); this.forceUpdate();}} bsStyle={channel.localMute ? "primary" : "default"}>M</Button>
                   <Button>S</Button>
-                  <Button>(TODO)</Button>
+                  <Button disabled><VolumeIndicator channel={channel} /></Button>
                   <Button disabled>{channel.name}</Button>
                 </ButtonGroup>
               </div>;

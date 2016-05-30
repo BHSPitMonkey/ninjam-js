@@ -1,5 +1,6 @@
 import React from 'react';
-import { Panel, Button, ButtonGroup } from 'react-bootstrap';
+import { Panel, Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
+import VolumeIndicator from './volume-indicator.jsx';
 
 class LocalChannels extends React.Component {
   constructor(props) {
@@ -30,7 +31,7 @@ class LocalChannels extends React.Component {
           return <ButtonGroup key={i}>
             <Button onClick={() => {lc.toggleTransmit(); this.forceUpdate();}} bsStyle={lc.transmit ? "primary" : "default"}>Transmit</Button>
             <Button onClick={() => {lc.toggleLocalMute(); this.forceUpdate();}} bsStyle={lc.localMute ? "default" : "primary"}>Listen</Button>
-            <Button>(TODO)</Button>
+            <Button disabled><VolumeIndicator channel={lc} /></Button>
             <Button disabled>{lc.name}</Button>
           </ButtonGroup>;
         })}

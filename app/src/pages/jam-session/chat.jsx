@@ -12,15 +12,29 @@ class Chat extends React.Component {
     };
 
     // Private members
-    // TODO
+    this.messagesDiv = null;
 
     // Prebind custom methods
+    this.onNinjamMessage = this.onNinjamMessage.bind(this);
     this.onComposeKeyDown = this.onComposeKeyDown.bind(this);
   }
 
   componentDidMount() {
-    // Set up Ninjam callback
-    this.context.ninjam.on('chatMessage', this.onNinjamMessage.bind(this));
+    // Subscribe to Ninjam callbacks
+    this.context.ninjam.on('chatMessage', this.onNinjamMessage);
+  }
+
+  componentWillUnmount() {
+    // Unsubscribe from Ninjam callbacks
+    this.context.ninjam.removeListener('chatMessage', this.onNinjamMessage);
+  }
+
+  componentDidUpdate() {
+    // Auto-scroll chat box after an update
+    if (this.messagesDiv) {
+      console.log("messagesDiv", this.messagesDiv);
+      this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+    }
   }
 
   /**
@@ -49,11 +63,11 @@ class Chat extends React.Component {
           // TODO: Perform stacking (see onComposeKeyDown)
           type = "privmsg";
           username = fields.arg1;
-          content = 'Topic is: ' + '(PRIVATE) ' + fields.arg2;
+          content = '(PRIVATE) ' + fields.arg2;
           break;
         case "TOPIC":
           type = "topic";
-          content = 'Topic is: ' + fields.arg2;
+          content = fields.arg2;
           break;
         case "JOIN":
           type = "join";
@@ -112,11 +126,11 @@ class Chat extends React.Component {
     return (
       <div id="chat">
         <h2>Chat</h2>
-        <div className="messages">
+        <div className="messages" ref={(ref) => {this.messagesDiv = ref}}>
           {this.state.messages}
         </div>
         <div className="entry-area">
-          <textarea onKeyDown={this.onComposeKeyDown} />
+          <textarea onKeyDown={this.onComposeKeyDown} placeholder="Type here to chat" />
         </div>
       </div>
     );
