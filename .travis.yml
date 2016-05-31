@@ -42,6 +42,8 @@ install:
 #- npm install electron-builder@next # force install next version to test electron-builder
 - npm install
 - npm prune
+- cd app
+- npm install
 
 script: cd app && npm run make-dist && cd .. && npm run dist
 

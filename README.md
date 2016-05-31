@@ -44,11 +44,18 @@ https://chrome.google.com/webstore/detail/ninjam-js/hgcicpalplclhnoephgjpmoknnnm
 Run `npm install` from the project root to install node dependencies. This will
 also invoke `npm install` in the `app/` directory automatically.
 
+```bash
+cd <project_root>
+npm install # Install packaging tools
+cd app/
+npm install # Install app dependencies
+```
+
 ### Running locally
 
 To build and run the app locally:
 
-```
+```bash
 cd <project_root>/app/
 npm run watch
 ```
