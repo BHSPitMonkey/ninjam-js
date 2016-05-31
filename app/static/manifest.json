@@ -5,7 +5,7 @@
     }
   },
   "manifest_version": 2,
-  "name": "Ninjam JS++",
+  "name": "Ninjam JS",
   "version": "0.4.0",
 
   "description": "A NINJAM client written in JavaScript. Collaborate with musicians online.",
