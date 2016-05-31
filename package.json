@@ -4,11 +4,16 @@
     "app-bundle-id": "com.stepheneisenhauer.ninjam-js",
     "app-category-type": "public.app-category.music"
   },
+  "directories": {
+    "app": "app/build"
+  },
   "scripts": {
     "postinstall": "install-app-deps",
     "pack": "build",
     "dist": "build",
-    "start": "electron app"
+    "start": "electron app/build",
+    "make-chrome": "cd app && npm run make-dist && mkdir -p ../dist && cd build && rm -f ../../dist/ninjam-js-chrome.zip && zip -r ../../dist/ninjam-js-chrome.zip * -x electron* package.json"
+
   },
   "devDependencies": {
     "electron-builder": "^3.23.0",

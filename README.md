@@ -34,3 +34,45 @@ https://chrome.google.com/webstore/detail/ninjam-js/hgcicpalplclhnoephgjpmoknnnm
 ### Jamming on a server
 
 ![Jamming on a server](https://raw.github.com/wiki/BHSPitMonkey/ninjam-js/screenshots/jam.png)
+
+## Development
+
+### Setting up dependencies
+
+Run `npm install` from the project root to install node dependencies. This will
+also invoke `npm install` in the `app/` directory automatically.
+
+### Running locally
+
+To build and run the app locally:
+
+```
+cd <project_root>/app/
+npm run watch
+```
+
+This starts a process which performs an initial build (populating the `app/build/`
+directory if it isn't already) and continuously watches for changes, rebuilding
+individual assets as needed.
+
+To just build the application once without starting the watcher, run `npm run make-dist` instead.
+
+Once a build has been made, open another terminal and launch the application using Electron:
+
+```
+cd <project_root>
+npm start
+```
+
+### Noteworthy files/directories
+
+    root/
+    |- package.json: Used for electron-builder packaging, contains packaging scripts
+    |- build/: Resources used by electron-builder during packaging (icons, etc.)
+    |- app/:
+       |- package.json: Declares app dependencies, contains build scripts
+       |- webpack.config.js: Webpack build configuration
+       |- build/: Destination for built JS/CSS bundles and copied static assets
+       |- src/: React source
+       |- static/: Static assets copied as-is into build/ by Webpack
+          |- package.json: Declares app metadata used by Electron and electron-builder
