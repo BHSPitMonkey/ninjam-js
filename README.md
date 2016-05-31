@@ -1,6 +1,7 @@
 # Ninjam JS
 
 [![Build Status](https://travis-ci.org/BHSPitMonkey/ninjam-js.svg?branch=master)](https://travis-ci.org/BHSPitMonkey/ninjam-js)
+[![Build status](https://ci.appveyor.com/api/projects/status/u8ma65i94r0pu2hh?svg=true)](https://ci.appveyor.com/project/BHSPitMonkey/ninjam-js)
 
 Music collaboration in the browser!
 
@@ -20,12 +21,13 @@ Ninjam JS is still a work in progress. The current code is capable of
 connecting to servers, sending and receiving chat messages (including votes),
 listening to audio channels from other users, and transmitting audio.
 
-## Get the Alpha
+## Download
 
-You can install a work-in-progress build using Chrome, Chromium, or Chrome OS
-by going here:
+You can install Ninjam JS using Chrome, Chromium, or Chrome OS by clicking below here:
 
-https://chrome.google.com/webstore/detail/ninjam-js/hgcicpalplclhnoephgjpmoknnnmdfje
+[![Chrome Web Store](https://developer.chrome.com/webstore/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/ninjam-js/hgcicpalplclhnoephgjpmoknnnmdfje)
+
+Or, you can download an installer for Windows, OSX, or Linux from the [Releases](https://github.com/BHSPitMonkey/ninjam-js/releases) page.
 
 ## Screenshots
 
