@@ -44,6 +44,8 @@ install:
 - npm prune
 - cd app
 - npm install
+- npm prune
+- cd ..
 
 script: cd app && npm run make-dist && cd .. && npm run dist
 
