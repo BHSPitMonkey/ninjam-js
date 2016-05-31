@@ -1,5 +1,7 @@
 # Ninjam JS
 
+[![Build Status](https://travis-ci.org/BHSPitMonkey/ninjam-js.svg?branch=master)](https://travis-ci.org/BHSPitMonkey/ninjam-js)
+
 Music collaboration in the browser!
 
 ## Overview
