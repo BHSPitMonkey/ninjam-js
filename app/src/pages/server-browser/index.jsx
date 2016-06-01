@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navbar, Tabs, Tab } from 'react-bootstrap';
 import PublicServerList from './public-server-list.jsx';
+import JammrLoginForm from './jammr-login-form.jsx';
 import CustomServerForm from './custom-server-form.jsx';
 import AgreementModal from './agreement-modal.jsx';
 
@@ -89,8 +90,10 @@ class ServerBrowser extends React.Component {
             <Tab eventKey={1} title="Public">
               <PublicServerList onSelect={this.onSelect} />
             </Tab>
-            <Tab eventKey={2} title="jammr">Jammr connectivity coming soon!</Tab>
-            <Tab eventKey={3} title="Recent">Content</Tab>
+            <Tab eventKey={2} title="jammr">
+              <JammrLoginForm />
+            </Tab>
+            {/*<Tab eventKey={3} title="Recent">Content</Tab>*/}
             <Tab eventKey={4} title="Custom">
               <CustomServerForm onSelect={this.onSelect} />
             </Tab>
