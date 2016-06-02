@@ -1,14 +1,14 @@
 import React from 'react';
-import { Form, FormGroup, FormControl, Button, Col, ControlLabel } from 'react-bootstrap';
-import JammrClient from '../../jammr/client.js';
+import { Form, FormGroup, FormControl, Button, Col, ControlLabel, Tooltip } from 'react-bootstrap';
+import storage from '../../../storage/index.js';
 
 export default class JammrLoginForm extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      username: localStorage['lastJammrUsername'] || "",
-      password: "",
+      username: storage['lastJammrUsername'] || '',
+      password: '',
       busy: false,
     };
 
@@ -26,14 +26,12 @@ export default class JammrLoginForm extends React.Component {
     this.setState({busy: true});
 
     // Save values for pre-loading next time
-    localStorage['lastJammrUsername'] = this.state.username;
+    storage['lastJammrUsername'] = this.state.username;
 
     // Contact Jammr API for token (TODO: Move to a JammrApi class)
-    let jammr = new JammrClient();
-    jammr.authenticate(this.state.username, this.state.password);
-    // TODO: Stuff
+    this.props.jammr.authenticate(this.state.username, this.state.password);
 
-    this.setState({busy: false, password: ""}); // TODO: Move this to POST finish callback
+    this.setState({busy: false, password: ''}); // TODO: Move this to POST finish callback
   }
 
   render() {

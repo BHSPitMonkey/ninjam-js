@@ -1,14 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Modal, Button, Form, FormGroup, Col, FormControl, HelpBlock, ControlLabel } from 'react-bootstrap';
+import storage from '../../storage/index.js';
 
 export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      username: localStorage['lastUsername'] || "",
-      password: "",
+      username: storage['lastUsername'] || '',
+      password: '',
     };
 
     // Prebind
@@ -20,7 +21,7 @@ export default class LoginModal extends React.Component {
     let username = this.state.username;
     let password = this.state.password;
 
-    localStorage['lastUsername'] = username;
+    storage['lastUsername'] = username;
     this.props.onResponse(true, this.props.server.host, username, password);
   }
   onCancel() {

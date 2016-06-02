@@ -24,7 +24,8 @@ body {
   border-bottom: 1px solid #eee;
 }
 
-.public-server-list .label {
+.public-server-list .label,
+.jammr-server-list .label {
   margin-right: 3px;
 }
 

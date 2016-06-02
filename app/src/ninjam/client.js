@@ -13,6 +13,10 @@ import Channel from './remote-channel';
  */
 export default class NinjamClient {
   constructor() {
+    // Constants
+    this.PROTOCOL_NINJAM = 'ninjam';
+    this.PROTOCOL_JAMMR = 'jammr';
+
     this.status = "starting";
 
     // Set up audio playback context
@@ -82,6 +86,7 @@ export default class NinjamClient {
     this.status = "ready";
     this.host = null;
     this.port = null;
+    this.protocol = this.PROTOCOL_NINJAM;
     this.username = null;
     this.fullUsername = null;   // Server will tell us this after auth reply
     this.password = null;
@@ -188,8 +193,14 @@ export default class NinjamClient {
    * @param {string} username - Username/handle to connect as.
    * @param {string} password - Password, normally an empty string.
    * @param {function} onChallenge - Callback for when the server issues challenge.
+   * @param {boolean} jammr - True if connecting to a jammr server
    */
-  connect(host, username, password, onChallenge) {
+  connect(host, username, password, onChallenge, jammr) {
+    if (jammr) {
+      console.warn("jammr not yet supported by ninjam client");
+      this.protocol = this.PROTOCOL_JAMMR;
+    }
+
     console.log("Connect called. Status is: " + this.status);
     if (this.status == "ready") {
       this.username = username;
@@ -235,7 +246,11 @@ export default class NinjamClient {
     // Insert other fields
     var capabilities = (acceptedAgreement) ? 1 : 0;
     msg.appendUint32(capabilities);
-    msg.appendUint32(0x00020000);
+    if (this.protocol === this.PROTOCOL_JAMMR) {
+      msg.appendUint32(0x80000000);
+    } else {
+      msg.appendUint32(0x00020000);
+    }
 
     if (!msg.hasMoreData())
       console.log("Message appears to be filled.");

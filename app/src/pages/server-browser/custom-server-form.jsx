@@ -1,14 +1,15 @@
 import React from 'react';
 import { Form, FormGroup, FormControl, Button, Col, ControlLabel } from 'react-bootstrap';
+import storage from '../../storage/index.js';
 
 export default class CustomServerForm extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      username: localStorage['lastUsername'] || "",
-      password: "",
-      host: localStorage['lastCustomHost'] || "",
+      username: storage['lastUsername'] || '',
+      password: '',
+      host: storage['lastCustomHost'] || '',
     };
 
     this.onSubmit = this.onSubmit.bind(this);
@@ -22,8 +23,8 @@ export default class CustomServerForm extends React.Component {
     event.preventDefault();
 
     // Save values for pre-loading next time
-    localStorage['lastCustomHost'] = this.state.host;
-    localStorage['lastUsername'] = this.state.username;
+    storage['lastCustomHost'] = this.state.host;
+    storage['lastUsername'] = this.state.username;
 
     // Tell server browser our choice
     this.props.onSelect(this.state.host, this.state.username, this.state.password);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar, Tabs, Tab } from 'react-bootstrap';
 import PublicServerList from './public-server-list.jsx';
-import JammrLoginForm from './jammr-login-form.jsx';
+import JammrMain from './jammr/index.jsx';
 import CustomServerForm from './custom-server-form.jsx';
 import AgreementModal from './agreement-modal.jsx';
 
@@ -40,10 +40,15 @@ class ServerBrowser extends React.Component {
    * @param {string} host
    * @param {string} username
    * @param {string} password
+   * @param {boolean} jammr - True if this is a jammr server
    */
-  onSelect(host, username, password) {
+  onSelect(host, username, password, jammr = false) {
+    if (jammr) {
+      alert('Sorry, jammr is not supported just yet.');
+      return;
+    }
     console.log("Connecting to server %s as %s", host, username);
-    this.context.ninjam.connect(host, username, password, this.onReceiveServerChallenge);
+    this.context.ninjam.connect(host, username, password, this.onReceiveServerChallenge, jammr);
   }
 
   /**
@@ -91,7 +96,7 @@ class ServerBrowser extends React.Component {
               <PublicServerList onSelect={this.onSelect} />
             </Tab>
             <Tab eventKey={2} title="jammr">
-              <JammrLoginForm />
+              <JammrMain onSelect={this.onSelect} />
             </Tab>
             {/*<Tab eventKey={3} title="Recent">Content</Tab>*/}
             <Tab eventKey={4} title="Custom">
