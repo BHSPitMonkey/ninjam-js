@@ -69,6 +69,12 @@ class Chat extends React.Component {
           username = fields.arg1;
           content = '(PRIVATE) ' + fields.arg2;
           break;
+        case "PRIVS":
+          // List of privileges granted on a jammr server; see:
+          // https://github.com/wahjam/wahjam/blob/master/common/UserPrivs.cpp
+          console.log("Got PRIVS fields:", fields);
+          // TODO
+          break;
         case "TOPIC":
           type = "topic";
           content = fields.arg2;

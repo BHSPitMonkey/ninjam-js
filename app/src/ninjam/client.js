@@ -1,4 +1,4 @@
-import { SHA1 } from 'crypto-js';
+import { SHA1, lib as CryptoLib } from 'crypto-js';
 import EventEmitter from 'events';
 import NetSocket from '../net-socket';
 import DownloadManager from './download-manager';
@@ -7,6 +7,27 @@ import MessageBuilder from './message-builder';
 import User from './user';
 import LocalChannel from './local-channel';
 import Channel from './remote-channel';
+
+/**
+ * Convert a WordArray to a Uint8Array.
+ * (From https://groups.google.com/forum/#!topic/crypto-js/TOb92tcJlU0)
+ * @param {WordArray} wordArray - WordArray object as returned by crypto-js
+ * @return {Uint8Array}
+ */
+function wordArrayToTypedArray(wordArray) {
+  // Shortcuts
+  var words = wordArray.words;
+  var sigBytes = wordArray.sigBytes;
+
+  // Convert
+  var u8 = new Uint8Array(sigBytes);
+  for (var i = 0; i < sigBytes; i++) {
+      var byte = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+      u8[i]=byte;
+  }
+
+  return u8;
+}
 
 /**
  * Ninjam Client
@@ -204,9 +225,10 @@ export default class NinjamClient {
     console.log("Connect called. Status is: " + this.status);
     if (this.status == "ready") {
       this.username = username;
+      this.anonymous = !password;
       if (this.anonymous)
         username = "anonymous:" + username;
-      this.passHash = SHA1(username + ':' + password).toString(); // Pass 1/2
+      this.passHash = SHA1(username + ':' + password); // Pass 1/2
       this.on('challenge', onChallenge);
 
       // Split the host string (e.g. hostname:port) into hostname and port
@@ -237,8 +259,7 @@ export default class NinjamClient {
     var msg = new MessageBuilder(29 + username.length);
 
     // Insert password hash (binary, not hex string)
-    for (var i=0; i<5; i++)
-      msg.appendInt32(this.passHash.words[i]);
+    msg.appendArrayBuffer(wordArrayToTypedArray(this.passHash).buffer);
 
     // Insert username
     msg.appendString(username);
@@ -588,19 +609,26 @@ export default class NinjamClient {
         break;
       }
       else {
-
         // React to the type of message we're seeing
         switch (type) {
           case 0x00:  // Server Auth Challenge
             console.log("Received a server auth challenge.");
             var fields = {
-              challenge: msg.nextString(8),
+              challenge: msg.nextArrayBuffer(8),
               serverCapabilities: msg.nextInt32(),
               //keepaliveInterval: msg.nextInt16(),
               protocolVersion: msg.nextUint32(),
-              licenseAgreement: msg.nextString()
+              licenseAgreement: ''
             };
-            this.passHash = SHA1(this.passHash + fields.challenge);  // Pass 2/2
+            if (msg.hasMoreData()) {
+              fields.licenseAgreement = msg.nextString();
+            }
+
+            // Merge passHash with challenge
+            let passChallenge = new MessageBuilder(28);
+            passChallenge.appendArrayBuffer(wordArrayToTypedArray(this.passHash).buffer);
+            passChallenge.appendArrayBuffer(fields.challenge);
+            this.passHash = SHA1(CryptoLib.WordArray.create(new Uint8Array(passChallenge.buf)));
 
             // Tell the UI about this challenge
             this._emitter.emit('challenge', fields);

@@ -62,4 +62,45 @@ export default class MessageReader {
   bytesRemaining() {
     return this._data.byteLength - this._offset;
   }
+  // For debugging; Returns a hexadecimal string of the entire buffer
+  toHexString() {
+    let ua = new Uint8Array(this._data.buffer);
+    let h = '';
+    ua.forEach(byte => {
+      let str = byte.toString(16).toUpperCase();
+      if (str.length == 1) h += '0';
+      h += str + ' ';
+    });
+    return h;
+  }
+  // For debugging; Returns a UTF-8 representation of the entire buffer
+  toString() {
+    let td = new TextDecoder();
+    return td.decode(this._data.buffer);
+  }
+  // For debugging
+  toFancyString() {
+    let ua = new Uint8Array(this._data.buffer);
+    let hexChunk = '';
+    let strChunk = '';
+    let ret = '';
+    let len = ua.length;
+    ua.forEach((byte, i) => {
+      let hex = byte.toString(16).toUpperCase();
+      if (hex.length == 1) hex += '0';
+      hexChunk += hex + ' ';
+
+      if (byte == 0xA0)
+        strChunk += ' ';
+      else
+        strChunk += String.fromCharCode(byte);
+
+      // Flush line every 16 bytes
+      if (i % 16 == 15 || i === len - 1) {
+        ret += hexChunk + strChunk.replace('\n', ' ').replace('\r', ' ').replace('\xA0', ' ') + '\n';
+        hexChunk = strChunk = '';
+      }
+    });
+    return ret;
+  }
 }

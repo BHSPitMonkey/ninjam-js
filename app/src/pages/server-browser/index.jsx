@@ -43,10 +43,6 @@ class ServerBrowser extends React.Component {
    * @param {boolean} jammr - True if this is a jammr server
    */
   onSelect(host, username, password, jammr = false) {
-    if (jammr) {
-      alert('Sorry, jammr is not supported just yet.');
-      return;
-    }
     console.log("Connecting to server %s as %s", host, username);
     this.context.ninjam.connect(host, username, password, this.onReceiveServerChallenge, jammr);
   }
@@ -56,8 +52,13 @@ class ServerBrowser extends React.Component {
    * @param {Object} fields
    */
   onReceiveServerChallenge(fields) {
-    // Ask user if they want to accept terms
-    this.setState({agreementTerms: fields.licenseAgreement});
+    if (fields.licenseAgreement) {
+      // Ask user if they want to accept terms
+      this.setState({agreementTerms: fields.licenseAgreement});
+    } else {
+      // Respond to challenge
+      this.onAgreementResponse(true);
+    }
   }
 
   /**
