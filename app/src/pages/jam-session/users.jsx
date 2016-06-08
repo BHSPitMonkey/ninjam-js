@@ -33,6 +33,12 @@ class RemoteUsers extends React.Component {
   }
 
   render() {
+    let placeholder = this.context.ninjam.users.length ? '' : (
+      <div style={{fontSize:'150%', textAlign:'center', opacity:0.8, padding:'1em'}}>
+        <p>Looks like you're the only one here.</p>
+        <p>Tell your friends to join!</p>
+      </div>
+    );
     return (
       <div>
         {Object.keys(this.context.ninjam.users).map((username) => {
@@ -51,6 +57,7 @@ class RemoteUsers extends React.Component {
             })}
           </UserPanel>;
         })}
+        {placeholder}
       </div>
     );
   }

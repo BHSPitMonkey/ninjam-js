@@ -2,13 +2,14 @@ import React from 'react';
 import xhr from 'xhr';
 import { ListGroup, ListGroupItem, Label } from 'react-bootstrap';
 import LoginModal from './login-modal.jsx';
+import storage from '../../storage/index.js';
 
 export default class PublicServerList extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      servers: [
+      servers: JSON.parse(storage.getItem('publicServers')) || [
         { host: "ninjamer.com:2049", locale: "FR" },
         { host: "ninjamer.com:2050", locale: "FR" },
         { host: "ninjamer.com:2051", locale: "FR" },
@@ -37,6 +38,11 @@ export default class PublicServerList extends React.Component {
     const url = "http://autosong.ninjam.com/serverlist.php";
 
     xhr.get(url, (err, resp) => {
+      if (err) {
+        console.error('Unable to fetch public server list');
+        return;
+      }
+
       const data = resp.body;
 
       // Parse the server list
@@ -66,6 +72,13 @@ export default class PublicServerList extends React.Component {
       });
 
       this.setState({servers});
+
+      // Cache this server list in case the online server list goes down
+      let cachedServers = servers.map(server => {
+        // Strip out everything but the host
+        return {host: server.host};
+      });
+      storage['publicServers'] = JSON.stringify(cachedServers);
     });
   }
 

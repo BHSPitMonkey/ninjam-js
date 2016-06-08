@@ -14,6 +14,7 @@ else if (navigator.mozTCPSocket) {
 }
 else {
   // Throw some kind of error
+  throw new Error('No supported TCP socket implementation found');
 }
 
 export default impl;

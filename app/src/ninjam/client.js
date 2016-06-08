@@ -165,7 +165,25 @@ export default class NinjamClient {
       //   console.error(err.name + ": " + err.message);
       // });
 
-      // Try to open the default microphone
+      // Get recording devices
+      navigator.mediaDevices.enumerateDevices()
+      .then(devices => {
+        // Only care about non-default audioinput devices
+        devices = devices.filter(device => {
+          return device.kind == 'audioinput' && device.deviceId != 'default';
+        });
+
+        // Call getUserMedia for all devices
+        devices.forEach(device => {
+          // TODO
+          console.log(`Discovered device: ${device.label}`);
+        });
+      })
+      .catch(err => {
+        console.error('Could not enumerate media devices for recording.', err);
+      });
+
+      // Try to open the default microphone (TODO: Move once above code is able to call getUserMedia for each device)
       console.log("Calling getUserMedia");
       navigator.webkitGetUserMedia(
         {

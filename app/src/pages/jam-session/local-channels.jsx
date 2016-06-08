@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
+import { Button, ButtonGroup, Alert } from 'react-bootstrap';
 import VolumeIndicator from './volume-indicator.jsx';
 import UserPanel from './user-panel.jsx';
 
@@ -22,8 +22,12 @@ class LocalChannels extends React.Component {
   }
 
   render() {
+    let username = this.context.ninjam.username || 'You';
+    let placeholder = this.context.ninjam.localChannels.length ? '' : (
+      <Alert bsStyle="warning">No recording devices were detected! 🙁</Alert>
+    );
     return (
-      <UserPanel name={this.context.ninjam.username} ip="(You)" local>
+      <UserPanel name={username} ip="(You)" local>
         {this.context.ninjam.localChannels.map((lc, i) => {
           return <ButtonGroup key={i}>
             <Button onClick={() => {lc.toggleTransmit(); this.forceUpdate();}} bsStyle={lc.transmit ? "primary" : "default"}>Transmit</Button>
@@ -32,6 +36,7 @@ class LocalChannels extends React.Component {
             <Button disabled>{lc.name}</Button>
           </ButtonGroup>;
         })}
+        {placeholder}
       </UserPanel>
     );
   }

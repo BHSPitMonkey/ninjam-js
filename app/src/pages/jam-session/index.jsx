@@ -40,7 +40,6 @@ class JamSession extends React.Component {
               <a href="#">Ninjam JS</a>
             </Navbar.Brand>
           </Navbar.Header>
-          <Navbar.Collapse>
             <Nav>
               <Metronome ninjam={this.context.ninjam} />
             </Nav>
@@ -59,7 +58,6 @@ class JamSession extends React.Component {
                 </ButtonGroup>
               </ButtonToolbar>
             </Nav>
-          </Navbar.Collapse>
         </Navbar>
         <div id="jam">
           <div id="users-channels">

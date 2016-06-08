@@ -90,7 +90,8 @@ body {
   margin-bottom: 5px;
 }
 
-#jam > #users-channels .panel .btn-group:last-child {
+#jam > #users-channels .panel .btn-group:last-child,
+#jam > #users-channels .panel .alert:last-child {
   margin-bottom: 0;
 }
 
