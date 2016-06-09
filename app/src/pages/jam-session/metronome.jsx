@@ -50,12 +50,14 @@ export default class Metronome extends React.Component {
     this.setState({modalVisible:false});
 
     // Cast votes
-    if (data.bpm != this.props.ninjam.bpm) {
-      this.props.ninjam.submitChatMessage(`!vote bpm ${data.bpm}`);
-    } else if (data.bpi != this.props.ninjam.bpi) {
-      this.props.ninjam.submitChatMessage(`!vote bpi ${data.bpi}`);
-    } else {
-      console.warning('Tried to cast vote, but BPM and BPI were unchanged.');
+    if (data) {
+      if (data.bpm != this.props.ninjam.bpm) {
+        this.props.ninjam.submitChatMessage(`!vote bpm ${data.bpm}`);
+      } else if (data.bpi != this.props.ninjam.bpi) {
+        this.props.ninjam.submitChatMessage(`!vote bpi ${data.bpi}`);
+      } else {
+        console.warning('Tried to cast vote, but BPM and BPI were unchanged.');
+      }
     }
   }
 

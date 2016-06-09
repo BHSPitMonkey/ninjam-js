@@ -7,22 +7,28 @@ export default class BpmBpiModal extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      bpm: this.props.bpm,
-      bpi: this.props.bpi,
-    };
+    this.state = this.props;
 
     // Prebind
+    this.onEnter = this.onEnter.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+    this.onCancel = this.onCancel.bind(this);
+  }
+  onEnter() {
+    // Reset state
+    this.setState(this.props);
   }
   onSubmit() {
     // Pass data to parent
     this.props.onResponse(this.state);
   }
+  onCancel() {
+    this.props.onResponse(false);
+  }
   render() {
     let unchanged = (this.state.bpm == this.props.bpm && this.state.bpi == this.props.bpi);
     return (
-      <Modal show={this.props.show} className="agreement-modal">
+      <Modal show={this.props.show} onEnter={this.onEnter} onHide={this.onCancel} className="agreement-modal">
         <Modal.Header closeButton>
           <Modal.Title>Change Tempo or Interval</Modal.Title>
         </Modal.Header>
