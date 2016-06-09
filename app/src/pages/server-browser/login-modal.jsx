@@ -7,10 +7,18 @@ export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
 
+    // Initial state
     this.state = {
-      username: storage['lastUsername'] || '',
+      username: '',
       password: '',
     };
+
+    // Load default state from storage
+    storage.getItem('lastUsername')
+    .then(username => {
+      this.setState({username})
+    })
+    .catch(e => {});
 
     // Prebind
     this.onSubmit = this.onSubmit.bind(this);
@@ -21,7 +29,7 @@ export default class LoginModal extends React.Component {
     let username = this.state.username;
     let password = this.state.password;
 
-    storage['lastUsername'] = username;
+    storage.setItem('lastUsername', username);
     this.props.onResponse(true, this.props.server.host, username, password);
   }
   onCancel() {

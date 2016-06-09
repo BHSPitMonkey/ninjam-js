@@ -6,12 +6,26 @@ export default class CustomServerForm extends React.Component {
   constructor(props) {
     super(props);
 
+    // Initial state
     this.state = {
-      username: storage['lastUsername'] || '',
+      host: '',
+      username: '',
       password: '',
-      host: storage['lastCustomHost'] || '',
     };
 
+    // Load default state from storage
+    storage.getItem('lastCustomHost')
+    .then(host => {
+      this.setState({host})
+    })
+    .catch(e => {});
+    storage.getItem('lastUsername')
+    .then(username => {
+      this.setState({username})
+    })
+    .catch(e => {});
+
+    // Prebind
     this.onSubmit = this.onSubmit.bind(this);
   }
 
@@ -23,8 +37,8 @@ export default class CustomServerForm extends React.Component {
     event.preventDefault();
 
     // Save values for pre-loading next time
-    storage['lastCustomHost'] = this.state.host;
-    storage['lastUsername'] = this.state.username;
+    storage.setItem('lastCustomHost', this.state.host);
+    storage.setItem('lastUsername', this.state.username);
 
     // Tell server browser our choice
     this.props.onSelect(this.state.host, this.state.username, this.state.password);

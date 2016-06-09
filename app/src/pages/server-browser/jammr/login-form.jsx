@@ -6,12 +6,21 @@ export default class JammrLoginForm extends React.Component {
   constructor(props) {
     super(props);
 
+    // Initial state
     this.state = {
-      username: storage['lastJammrUsername'] || '',
+      username: '',
       password: '',
       busy: false,
     };
 
+    // Load default state from storage
+    storage.getItem('lastJammrUsername')
+    .then(username => {
+      this.setState({username})
+    })
+    .catch(e => {});
+
+    // Prebind
     this.onSubmit = this.onSubmit.bind(this);
   }
 
@@ -26,7 +35,7 @@ export default class JammrLoginForm extends React.Component {
     this.setState({busy: true});
 
     // Save values for pre-loading next time
-    storage['lastJammrUsername'] = this.state.username;
+    storage.setItem('lastJammrUsername', this.state.username);
 
     // Contact Jammr API for token (TODO: Move to a JammrApi class)
     this.props.jammr.authenticate(this.state.username, this.state.password);

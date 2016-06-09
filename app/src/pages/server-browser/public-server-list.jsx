@@ -9,21 +9,29 @@ export default class PublicServerList extends React.Component {
     super(props);
 
     this.state = {
-      servers: JSON.parse(storage['publicServers']) || [
-        { host: "ninjamer.com:2049", locale: "FR" },
-        { host: "ninjamer.com:2050", locale: "FR" },
-        { host: "ninjamer.com:2051", locale: "FR" },
-        { host: "ninjamer.com:2052", locale: "FR" },
-        { host: "ninbot.com:2049", locale: "US" },
-        { host: "ninbot.com:2050", locale: "US" },
-        { host: "ninbot.com:2051", locale: "US" },
-        { host: "ninbot.com:2052", locale: "US" },
-        { host: "virtualliveband.de:2051", locale: "DE" },
-        { host: "mutantlab.com:2049", locale: "US" },
+      servers: [
+        { host: "ninjamer.com:2049" },
+        { host: "ninjamer.com:2050" },
+        { host: "ninjamer.com:2051" },
+        { host: "ninjamer.com:2052" },
+        { host: "ninbot.com:2049" },
+        { host: "ninbot.com:2050" },
+        { host: "ninbot.com:2051" },
+        { host: "ninbot.com:2052" },
+        { host: "virtualliveband.de:2051" },
+        { host: "mutantlab.com:2049" },
       ],
       selected: -1,
     }
 
+    // Load default state from storage
+    storage.getItem('publicServers')
+    .then(servers => {
+      if (servers) this.setState({servers: JSON.parse(servers)})
+    })
+    .catch(e => {});
+
+    // Prebind
     this.refreshList = this.refreshList.bind(this);
     this.select = this.select.bind(this);
     this.onLoginResponse = this.onLoginResponse.bind(this);
@@ -78,7 +86,7 @@ export default class PublicServerList extends React.Component {
         // Strip out everything but the host
         return {host: server.host};
       });
-      storage['publicServers'] = JSON.stringify(cachedServers);
+      storage.setItem('publicServers', JSON.stringify(cachedServers));
     });
   }
 
