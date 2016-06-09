@@ -9,7 +9,7 @@ export default class PublicServerList extends React.Component {
     super(props);
 
     this.state = {
-      servers: JSON.parse(storage.getItem('publicServers')) || [
+      servers: JSON.parse(storage['publicServers']) || [
         { host: "ninjamer.com:2049", locale: "FR" },
         { host: "ninjamer.com:2050", locale: "FR" },
         { host: "ninjamer.com:2051", locale: "FR" },

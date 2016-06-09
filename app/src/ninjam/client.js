@@ -175,33 +175,42 @@ export default class NinjamClient {
 
         // Call getUserMedia for all devices
         devices.forEach(device => {
-          // TODO
           console.log(`Discovered device: ${device.label}`);
+          navigator.webkitGetUserMedia(
+            {
+              audio: {
+                mandatory: {
+                  sourceId: device.deviceId,
+                },
+                optional: [
+                  {'googEchoCancellation': false},
+                  {'googAutoGainControl': false},
+                  {'googAutoGainControl2': false},
+                  {'googNoiseSuppression': false},
+                  {'googHighpassFilter': false},
+                  {'googTypingNoiseDetection': false},
+                  {'echoCancellation': false},
+                ],
+              },
+            },
+            stream => {
+              this.localChannels.push(new LocalChannel(
+                stream,
+                this._masterGain,
+                this._audioContext,
+                this.announceUploadIntervalBegin.bind(this),
+                this.gotLocalEncodedChunk.bind(this)
+              ));
+            },
+            err => {
+              console.error("Call to webkitGetUserMedia failed :(", e);
+            }
+          );
         });
       })
       .catch(err => {
         console.error('Could not enumerate media devices for recording.', err);
       });
-
-      // Try to open the default microphone (TODO: Move once above code is able to call getUserMedia for each device)
-      console.log("Calling getUserMedia");
-      navigator.webkitGetUserMedia(
-        {
-          audio: {
-            optional: [
-              {'googEchoCancellation': false},
-              {'googAutoGainControl': false},
-              {'googAutoGainControl2': false},
-              {'googNoiseSuppression': false},
-              {'googHighpassFilter': false},
-              {'googTypingNoiseDetection': false},
-              {'echoCancellation': false},
-            ]
-          }
-        },
-        this.gotUserMedia.bind(this),
-        this.gotUserMediaError.bind(this)
-      );
     }
     else {
       console.log("Socket open attempt failed");
@@ -438,21 +447,6 @@ export default class NinjamClient {
     msg.appendUint8(final ? 1 : 0); // Flags
     msg.appendArrayBuffer(data);
     this._packMessage(0x84, msg.buf);
-  }
-
-  gotUserMedia(stream) {
-    var channel = new LocalChannel(
-      stream,
-      this._masterGain,
-      this._audioContext,
-      this.announceUploadIntervalBegin.bind(this),
-      this.gotLocalEncodedChunk.bind(this)
-    );
-    this.localChannels.push(channel);
-  }
-
-  gotUserMediaError(e) {
-    console.error("Call to webkitGetUserMedia failed :(", e);
   }
 
   // Converts an array buffer to a string asynchronously
