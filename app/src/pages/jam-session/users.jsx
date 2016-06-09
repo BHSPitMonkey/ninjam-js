@@ -33,7 +33,8 @@ class RemoteUsers extends React.Component {
   }
 
   render() {
-    let placeholder = this.context.ninjam.users.length ? '' : (
+    let usernames = Object.keys(this.context.ninjam.users);
+    let placeholder = usernames.length ? '' : (
       <div style={{fontSize:'150%', textAlign:'center', opacity:0.8, padding:'1em'}}>
         <p>Looks like you're the only one here.</p>
         <p>Tell your friends to join!</p>
@@ -41,10 +42,10 @@ class RemoteUsers extends React.Component {
     );
     return (
       <div>
-        {Object.keys(this.context.ninjam.users).map((username) => {
+        {usernames.map(username => {
           let user = this.context.ninjam.users[username];
           return <UserPanel name={user.name} ip={user.ip} key={user.name}>
-            {Object.keys(user.channels).map((key) => {
+            {Object.keys(user.channels).map(key => {
               let channel = user.channels[key];
               return <div className="channel" key={key}>
                 <ButtonGroup>

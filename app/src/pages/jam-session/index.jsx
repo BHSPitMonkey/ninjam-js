@@ -40,24 +40,24 @@ class JamSession extends React.Component {
               <a href="#">Ninjam JS</a>
             </Navbar.Brand>
           </Navbar.Header>
-            <Nav>
-              <Metronome ninjam={this.context.ninjam} />
-            </Nav>
-            <Nav pullRight>
-              <ButtonToolbar>
-                <ButtonGroup>
-                  <Button bsStyle={this.context.ninjam.metronomeMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMetronomeMute(); this.forceUpdate();}}><img src="img/ic_metronome_black.svg" /></Button>
-                  <Button bsStyle={this.context.ninjam.microphoneInputMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMicrophoneInputMute(); this.forceUpdate();}}><img src="img/ic_mic_mute_black.svg" /></Button>
-                  <Button bsStyle={this.context.ninjam.masterMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMasterMute(); this.forceUpdate();}}><img src="img/ic_speaker_mute_black.svg" width="16" /></Button>
-                </ButtonGroup>
-                <ButtonGroup>
-                  <DropdownButton title={<img src="img/ic_more_black.svg" />} id="bg-nested-dropdown">
-                    {/* <MenuItem eventKey="1">Toggle Debug Panel</MenuItem> */}
-                    <MenuItem eventKey="2" onClick={this.disconnect}>Leave Server</MenuItem>
-                  </DropdownButton>
-                </ButtonGroup>
-              </ButtonToolbar>
-            </Nav>
+          <Nav>
+            <Metronome ninjam={this.context.ninjam} />
+          </Nav>
+          <Nav pullRight>
+            <ButtonToolbar>
+              <ButtonGroup>
+                <Button bsStyle={this.context.ninjam.metronomeMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMetronomeMute(); this.forceUpdate();}}><img src="img/ic_metronome_black.svg" /></Button>
+                <Button bsStyle={this.context.ninjam.microphoneInputMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMicrophoneInputMute(); this.forceUpdate();}}><img src="img/ic_mic_mute_black.svg" /></Button>
+                <Button bsStyle={this.context.ninjam.masterMute ? "danger" : "default"} onClick={() => {this.context.ninjam.toggleMasterMute(); this.forceUpdate();}}><img src="img/ic_speaker_mute_black.svg" width="16" /></Button>
+              </ButtonGroup>
+              <ButtonGroup>
+                <DropdownButton title={<img src="img/ic_more_black.svg" />} id="bg-nested-dropdown">
+                  {/* <MenuItem eventKey="1">Toggle Debug Panel</MenuItem> */}
+                  <MenuItem eventKey="2" onClick={this.disconnect}>Leave Server</MenuItem>
+                </DropdownButton>
+              </ButtonGroup>
+            </ButtonToolbar>
+          </Nav>
         </Navbar>
         <div id="jam">
           <div id="users-channels">

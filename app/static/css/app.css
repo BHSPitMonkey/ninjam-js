@@ -49,6 +49,20 @@ body {
   background: #eee;
 }
 
+#jam-container .navbar-header {
+    float: left;
+}
+
+#jam-container .navbar-nav {
+    float: left;
+    margin: 0;
+}
+
+#jam-container .navbar-right {
+    float: right !important;
+    margin-right: -15px;
+}
+
 #jam {
   height: 100%;
   margin: 0px;
@@ -134,10 +148,15 @@ body {
 }
 
 .metronome.progress {
-  width: 400px;
-  margin: 16px 0 0 10px;
-  display: inline-block;
-  vertical-align: top;
+  position: fixed;
+  left: 0;
+  margin: 0;
+  width: 100%;
+  height: 4px;
+  border: none;
+  border-radius: 0;
+  top: 49px;
+  background: transparent;
 }
 
 .metronome .progress-bar {
