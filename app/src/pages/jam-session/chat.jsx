@@ -46,7 +46,6 @@ class Chat extends React.Component {
    * @param {Object} fields
    */
   onNinjamMessage(fields) {
-    let numMessages = this.state.messages.length;
     let type, username, content;
     switch (fields.command) {
         case "MSG":
@@ -55,6 +54,7 @@ class Chat extends React.Component {
             let lastMessage = this.state.messages.pop();
             if (lastMessage.props.type == "msg" && lastMessage.props.username == fields.arg1) {
               fields.arg2 = lastMessage.props.content + "\n" + fields.arg2;
+
             } else {
               this.state.messages.push(lastMessage);
             }
@@ -100,7 +100,7 @@ class Chat extends React.Component {
 
       // Insert new message
       if (type) {
-        this.state.messages.push(<Message type={type} username={username} content={content} key={numMessages} />);
+        this.state.messages.push(<Message type={type} username={username} content={content} key={this.state.messages.length} />);
         this.forceUpdate();
       }
 
@@ -127,7 +127,7 @@ class Chat extends React.Component {
         this.state.messages.pop();
         message = lastMessage.props.content + "\n" + message;
       }
-      this.state.messages.push(<Message type="msg" username={username} content={message} />);
+      this.state.messages.push(<Message type="msg" username={username} content={message} key={this.state.messages.length} />);
       this.forceUpdate();
     }
   }
