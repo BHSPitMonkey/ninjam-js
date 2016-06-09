@@ -147,31 +147,20 @@ export default class NinjamClient {
     if (success === true) {
       this.connected = true;
 
-      // Try to enumerate recording devices (TODO)
-      // if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-      //   console.error("enumerateDevices() not supported.");
-      //   return;
-      // }
-
-      // List all audio inputs (TODO)
-      // navigator.mediaDevices.enumerateDevices()
-      // .then(function(devices) {
-      //   devices.forEach(function(device) {
-      //     // TODO: Only care about ones where device.kind is 'audioinput'
-      //     console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
-      //   });
-      // })
-      // .catch(function(err) {
-      //   console.error(err.name + ": " + err.message);
-      // });
-
       // Get recording devices
       navigator.mediaDevices.enumerateDevices()
       .then(devices => {
-        // Only care about non-default audioinput devices
+        // Only care about audioinput devices
         devices = devices.filter(device => {
-          return device.kind == 'audioinput' && device.deviceId != 'default';
+          return device.kind == 'audioinput';
         });
+
+        // If multiple audio input devices exist, remove the 'default' one from the list (it's a duplicate)
+        if (devices.length > 1) {
+          devices = devices.filter(device => {
+            return device.deviceId != 'default';
+          });
+        }
 
         // Call getUserMedia for all devices
         devices.forEach(device => {
