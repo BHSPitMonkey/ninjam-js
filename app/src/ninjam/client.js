@@ -441,7 +441,7 @@ export default class NinjamClient {
   // TODO: Need to figure out local channel index if more than one exist
   gotLocalEncodedChunk(guid, data, final) {
     //console.log("gotLocalEncodedChunk, length " + data.byteLength, guid, data, final);
-    if (final) console.log("Writing final chunk for interval");
+    //if (final) console.log("Writing final chunk for interval");
     var msg = new MessageBuilder(17 + data.byteLength);
     msg.appendArrayBuffer(guid.buffer);
     msg.appendUint8(final ? 1 : 0); // Flags
@@ -498,7 +498,7 @@ export default class NinjamClient {
     var secondsToNext = secondsPerBeat * this.bpi; // in seconds
     this._nextIntervalCtxTime = this._currentIntervalCtxTime + secondsToNext;
 
-    console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + secondsToNext);
+    //console.log("New interval is starting. Ctx time: " + this._audioContext.currentTime + " Duration: " + secondsToNext);
 
     // Play all the ready intervals
     this._playAllChannelsNextInterval();
@@ -759,7 +759,7 @@ export default class NinjamClient {
               channelIndex: msg.nextUint8(),
               username: msg.nextString()
             };
-            console.log("Got new Download Interval Begin with username: " + fields.username);
+            //console.log("Got new Download Interval Begin with username: " + fields.username);
 
             // If this GUID is already known to us
             var download = this.downloads.get(fields.guid);
