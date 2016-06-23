@@ -1,7 +1,7 @@
 {
   "name": "ninjam-js",
   "productName": "Ninjam JS",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "An application for music collaboration",
   "main": "electron-main.js",
   "repository": "BHSPitMonkey/ninjam-js",
