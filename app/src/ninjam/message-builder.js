@@ -1,3 +1,5 @@
+const Utf8Encoder = new TextEncoder("utf-8");
+
 /**
  * An interface for packing information into a binary buffer.
  */
@@ -35,13 +37,10 @@ export default class MessageBuilder {
     this._data.setInt32(this._offset, value, true);
     this._offset += 4;
   }
-  appendString(string, length) {
-    var len = (length) ? length : string.length;
-    for (var i=0; i<len; i++) {
-      this.appendUint8(string.charCodeAt(i));
-    }
-    // Finish with NUL if length is unspecified
-    if (!length)
+  appendString(string, nullTerminate = true) {
+    let arr = Utf8Encoder.encode(string);
+    this.appendArrayBuffer(arr.buffer);
+    if (nullTerminate)
       this.appendUint8(0);
   }
   appendArrayBuffer(data) {

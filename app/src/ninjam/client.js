@@ -8,6 +8,8 @@ import User from './user';
 import LocalChannel from './local-channel';
 import Channel from './remote-channel';
 
+const Utf8Encoder = new TextEncoder("utf-8");
+
 /**
  * Convert a WordArray to a Uint8Array.
  * (From https://groups.google.com/forum/#!topic/crypto-js/TOb92tcJlU0)
@@ -397,9 +399,11 @@ export default class NinjamClient {
 
   // Send something to server
   submitChatMessage(content) {
-    var msg = new MessageBuilder(content.length + 8);
+    let contentBytes = Utf8Encoder.encode(content);
+    let msg = new MessageBuilder(contentBytes.byteLength + 8);
     msg.appendString('MSG');
-    msg.appendString(content);
+    msg.appendArrayBuffer(contentBytes.buffer);
+    msg.appendZeros(1); // String terminator
     msg.appendString('');
     msg.appendString('');
     msg.appendString('');
@@ -407,19 +411,23 @@ export default class NinjamClient {
   }
 
   submitPrivateMessage(recipient, content) {
-    var msg = new MessageBuilder(recipient.length + content.length + 12);
+    let contentBytes = Utf8Encoder.encode(content);
+    let msg = new MessageBuilder(recipient.length + contentBytes.byteLength + 12);
     msg.appendString('PRIVMSG');
     msg.appendString(recipient);
-    msg.appendString(content);
+    msg.appendArrayBuffer(contentBytes.buffer);
+    msg.appendZeros(1); // String terminator
     msg.appendString('');
     msg.appendString('');
     this._packMessage(0xc0, msg.buf);
   }
 
   submitTopic(content) {
-    var msg = new MessageBuilder(content.length + 10);
+    let contentBytes = Utf8Encoder.encode(content);
+    let msg = new MessageBuilder(content.length + 10);
     msg.appendString('TOPIC');
-    msg.appendString(content);
+    msg.appendArrayBuffer(contentBytes.buffer);
+    msg.appendZeros(1); // String terminator
     msg.appendString('');
     msg.appendString('');
     msg.appendString('');
@@ -431,7 +439,7 @@ export default class NinjamClient {
     var msg = new MessageBuilder(25);
     msg.appendArrayBuffer(guid.buffer);
     msg.appendUint32(0); // Just set estimated size to 0
-    msg.appendString("OGGv", 4);
+    msg.appendString("OGGv", false);
     msg.appendUint8(0); // TODO: Channel index
     this._packMessage(0x83, msg.buf);
   }
