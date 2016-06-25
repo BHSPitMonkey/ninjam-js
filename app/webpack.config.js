@@ -31,12 +31,12 @@ module.exports = {
     new CopyWebpackPlugin([
         { from: 'static' }
     ]),
-    // Tells React to use production mode
-    // new webpack.DefinePlugin({
-    //   'process.env':{
-    //     'NODE_ENV': JSON.stringify('production')
-    //   }
-    // }),
+    // Tell React to use production mode
+    new webpack.DefinePlugin({
+      'process.env': {
+        'NODE_ENV': JSON.stringify('production')
+      }
+    }),
     // Lets us grab the latest commit hash from git within the application
   //  new webpack.DefinePlugin({
   //    __BUILD__: JSON.stringify(childProcess.execSync('git rev-parse --short HEAD').toString().trim())

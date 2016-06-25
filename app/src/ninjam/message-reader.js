@@ -1,3 +1,5 @@
+const Utf8Decoder = new TextDecoder("utf-8");
+
 /**
  * An interface for extracting information from a packed binary buffer.
  */
@@ -34,20 +36,19 @@ export default class MessageReader {
     this._offset += 4;
     return this._data.getInt32(this._offset - 4, true);
   }
-  // Returns the next n bytes (characters) of the message as a String.
+  // Returns the next n bytes (characters) of the message as a UTF-8 String.
   // If length is unspecified, we'll assume string is NUL-terminated.
   nextString(length) {
-    var string = "";
-    if (length) {
-      for (var i=0; i<length; i++)
-        string += String.fromCharCode(this.nextUint8());
+    let start = this._offset;
+    if (typeof length === "undefined") {
+      length = 0;
+      while (this.nextUint8() != 0) // Keep seeking until NUL
+        length++;
+    } else {
+      this._offset += length;
     }
-    else {
-      var char;
-      while ((char = this.nextUint8()) != 0)
-        string += String.fromCharCode(char);
-    }
-    return string;
+    let slice = this._data.buffer.slice(start, start + length);
+    return Utf8Decoder.decode(slice);
   }
   // Returns the next n bytes of the message as a new ArrayBuffer object
   nextArrayBuffer(bytes) {
