@@ -10,6 +10,13 @@ import Channel from './remote-channel';
 
 const Utf8Encoder = new TextEncoder("utf-8");
 
+const STATUS_STARTING = "starting";
+const STATUS_READY = "ready";
+const STATUS_NO_SOCKET = "no socket";
+const STATUS_CONNECTING = "connecting";
+const STATUS_DISCONNECTING = "disconnecting";
+const STATUS_AUTHENTICATED = "authenticated";
+
 /**
  * Convert a WordArray to a Uint8Array.
  * (From https://groups.google.com/forum/#!topic/crypto-js/TOb92tcJlU0)
@@ -40,7 +47,7 @@ export default class NinjamClient {
     this.PROTOCOL_NINJAM = 'ninjam';
     this.PROTOCOL_JAMMR = 'jammr';
 
-    this.status = "starting";
+    this.status = STATUS_STARTING;
 
     // Set up audio playback context
     window.AudioContext = window.AudioContext||window.webkitAudioContext;
@@ -81,7 +88,6 @@ export default class NinjamClient {
     requestHi.send();
 
     // Try to create the socket
-    console.log("Trying to create socket...");
     this.socket = new NetSocket({
       protocol: "tcp",
       onCreate: this.onSocketCreate.bind(this),
@@ -106,7 +112,7 @@ export default class NinjamClient {
    */
   reinit() {
     this.debug = false;         // Causes debug pane to appear in UI
-    this.status = "ready";
+    this.status = STATUS_READY;
     this.host = null;
     this.port = null;
     this.protocol = this.PROTOCOL_NINJAM;
@@ -124,6 +130,7 @@ export default class NinjamClient {
     this.setMasterMute(true);
     this.setMetronomeMute(false);
     this.connected = false;
+    this.mock = false;
 
     this.localChannels = [];
     this.setMicrophoneInputMute(false);
@@ -141,7 +148,7 @@ export default class NinjamClient {
     }
     else {
       console.log("Couldn't create socket!");
-      this.status = "no socket";
+      this.status = STATUS_NO_SOCKET;
     }
   }
 
@@ -272,7 +279,7 @@ export default class NinjamClient {
 
       this.socket.connect(this.host, this.port);
 
-      this.status = "connecting";
+      this.status = STATUS_CONNECTING;
     }
     else {
       console.log("Can't connect: Socket not created! " + this.status);
@@ -351,7 +358,7 @@ export default class NinjamClient {
   // Disconnect from the current server
   disconnect(reason) {
     console.log("Disconnecting from server.");
-    this.status = "disconnecting";
+    this.status = STATUS_DISCONNECTING;
     if (this._nextIntervalBegin) {
       clearTimeout(this._nextIntervalBegin);
       this._nextIntervalBegin = null;
@@ -360,7 +367,9 @@ export default class NinjamClient {
       clearTimeout(this._checkKeepaliveTimeout)
       this._checkKeepaliveTimeout = null;
     }
-    this.socket.disconnect();
+    if (!this.mock) {
+      this.socket.disconnect();
+    }
     this.connected = false;
     // TODO: Kill all the audio
     this.downloads.clearAll();
@@ -457,26 +466,6 @@ export default class NinjamClient {
     this._packMessage(0x84, msg.buf);
   }
 
-  // Converts an array buffer to a string asynchronously
-  _arrayBufferToStringAsync(buf, callback) {
-    var bb = new Blob([new Uint8Array(buf)]);
-    var f = new FileReader();
-    f.onload = function(e) {
-      callback(e.target.result);
-    };
-    f.readAsText(bb);
-  }
-
-  // Converts a string to an array buffer
-  _stringToArrayBufferAsync(str, callback) {
-    var bb = new Blob([str]);
-    var f = new FileReader();
-    f.onload = function(e) {
-        callback(e.target.result);
-    };
-    f.readAsArrayBuffer(bb);
-  }
-
   // Converts an array buffer to a hex string
   _arrayBufferToHexString(buf) {
     var str = "";
@@ -485,16 +474,6 @@ export default class NinjamClient {
       var hex = arr[i].toString(16);
       if (hex.length == 1) hex = "0" + hex;
       str += hex;
-    }
-    return str;
-  }
-
-  // Converts an array buffer to a string
-  _arrayBufferToString(buf) {
-    var str = "";
-    var arr = new Uint8Array(buf);
-    for (var i=0; i<arr.byteLength; i++) {
-      str += String.fromCharCode(arr[i]);
     }
     return str;
   }
@@ -532,9 +511,11 @@ export default class NinjamClient {
     }
 
     // Tell LocalChannels about the new interval
-    this.localChannels.forEach(channel => {
-      channel.newInterval();
-    });
+    if (!this.mock) {
+      this.localChannels.forEach(channel => {
+        channel.newInterval();
+      });
+    }
 
     // Call this function again at the start of the next interval
     this._nextIntervalBegin = setTimeout(this._beginNewInterval.bind(this), secondsToNext * 1000);
@@ -674,7 +655,7 @@ export default class NinjamClient {
               this.disconnect(fields.error);
             }
             else {
-              this.status = "authenticated";
+              this.status = STATUS_AUTHENTICATED;
               this._checkKeepaliveTimeout = setTimeout(this._checkKeepalive.bind(this), 3000);
               this.setChannelInfo();
               this.fullUsername = fields.error;
@@ -763,11 +744,11 @@ export default class NinjamClient {
             var fields = {
               guid: this._arrayBufferToHexString(msg.nextArrayBuffer(16)),
               estimatedSize: msg.nextUint32(),
-              fourCC: this._arrayBufferToString(msg.nextArrayBuffer(4)),
+              fourCC: msg.nextString(4),
               channelIndex: msg.nextUint8(),
               username: msg.nextString()
             };
-            //console.log("Got new Download Interval Begin with username: " + fields.username);
+            console.log("Got new Download Interval Begin with username: " + fields.username);
 
             // If this GUID is already known to us
             var download = this.downloads.get(fields.guid);
@@ -908,5 +889,67 @@ export default class NinjamClient {
   _sendKeepalive() {
     //console.log("Sending keepalive.");
     this._packMessage(0xFD, null);
+  }
+
+  /**
+   * Join a fake jam.
+   */
+  mockJam() {
+    this.debug = false;
+    this.status = STATUS_AUTHENTICATED;
+    this.host = "example.com";
+    this.port = 1234;
+    this.protocol = this.PROTOCOL_NINJAM;
+    this.username = "Tim";
+    this.fullUsername = "Tim@1.2.3.x";
+    this.password = null;
+    this.anonymous = true;
+    this.users = {
+      "Lætitia": new User("Lætitia", "Lætitia@2.3.4.x", "2.3.4.x"),
+      "Mary": new User("Mary", "Mary@3.4.5.x", "3.4.5.x"),
+      "Richard": new User("Richard", "Richard@4.5.6.x", "4.5.6.x"),
+      "Morgane": new User("Morgane", "Morgane@5.6.7.x", "5.6.7.x"),
+      "Andy": new User("Andy", "Andy@6.7.8.x", "6.7.8.x"),
+    };
+    this.users["Lætitia"].channels[0] = new Channel(
+      "Vocals", 1, 1, this._masterGain
+    );
+    this.users["Mary"].channels[0] = new Channel(
+      "Vocals", 1, 1, this._masterGain
+    );
+    this.users["Richard"].channels[0] = new Channel(
+      "Bass Guitar", 1, 1, this._masterGain
+    );
+    this.users["Morgane"].channels[0] = new Channel(
+      "Synthesizer", 1, 1, this._masterGain
+    );
+    this.users["Morgane"].channels[1] = new Channel(
+      "Organ", 1, 1, this._masterGain
+    );
+    this.users["Andy"].channels[0] = new Channel(
+      "Drums", 1, 1, this._masterGain
+    );
+    this.bpm = 120;
+    this.bpi = 16;
+    this.currentBeat = 1;
+    this.maxChannels = null;
+    this.topic = "Dots and Loops.";
+    this.autosubscribe = true;
+    this.setMasterMute(false);
+    this.setMetronomeMute(false);
+    this.connected = true;
+    this.mock = true;
+
+    this.localChannels = [];
+    this.setMicrophoneInputMute(false);
+
+    this._checkKeepaliveTimeout = null;    // setTimeout handle for checking timeout
+    this._lastSendTime = null;      // Time of last socket write
+    this._msgBacklog = null;        // ArrayBuffer of incomplete server message(s)
+    this._nextIntervalBegin = null; // setTimeout handle for local interval setup
+    this.downloads = new DownloadManager();
+
+    this.onSocketConnect(true);
+    this._beginNewInterval();
   }
 }

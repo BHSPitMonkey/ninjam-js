@@ -18,6 +18,7 @@ export default class RemoteChannel {
     this.analyser.fftSize = 32;
     this.analyser.connect(outputNode);
     this.gainNode = outputNode.context.createGain();
+    this.gainNode.gain.value = this.localVolume;
     this.gainNode.connect(this.analyser);
     this.frequencyData = new Float32Array(this.analyser.frequencyBinCount);
     this.frequencyDataLastUpdate = 0;
@@ -68,7 +69,7 @@ export default class RemoteChannel {
    */
   setMute (state) {
     this.localMute = state;
-    this.gainNode.gain.value = (this.localMute) ? 0.0 : 1.0;
+    this.gainNode.gain.value = (this.localMute) ? 0.0 : this.localVolume;
   }
 
   /**
@@ -76,5 +77,10 @@ export default class RemoteChannel {
    */
   toggleMute () {
     this.setMute(!this.localMute);
+  }
+
+  setVolume(volume) {
+    this.localVolume = volume;
+    this.gainNode.gain.value = this.localVolume;
   }
 }

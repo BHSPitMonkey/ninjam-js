@@ -44,6 +44,8 @@ export default class MessageReader {
       length = 0;
       while (this.nextUint8() != 0) // Keep seeking until NUL
         length++;
+    } else {
+      this._offset += length;
     }
     let slice = this._data.buffer.slice(start, start + length);
     return Utf8Decoder.decode(slice);

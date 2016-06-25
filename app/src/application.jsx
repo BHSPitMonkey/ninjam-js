@@ -26,8 +26,11 @@ export default class Application extends React.Component {
 
     // Private members
     this.ninjam = new NinjamClient();
-    console.log("Created NinjamClient", this.ninjam);
     this.midiAccess = null;
+
+    // Expose ninjam client on window
+    window.app = this;
+    window.ninjam = this.ninjam;
   }
 
   componentDidMount() {
@@ -93,6 +96,14 @@ export default class Application extends React.Component {
       router: this.context.router,
       ninjam: this.ninjam,
     };
+  }
+
+  /**
+   * Enter a simulated jam.
+   */
+  mockJam() {
+    this.ninjam.mockJam();
+    this.context.router.push('/jam');
   }
 
   render() {
