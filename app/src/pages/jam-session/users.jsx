@@ -41,9 +41,35 @@ class RemoteUsers extends React.Component {
       </div>
     );
     return (
-      <div>
+      <div style={{display:"flex", flexDirection:"row", flexWrap:"wrap", justifyContent:"flex-start", alignContent:"flex-start", alignItems:"flex-start"}}>
         {usernames.map(username => {
           let user = this.context.ninjam.users[username];
+
+          return <div style={{minWidth:"200px", borderRadius:"10px", overflow:"hidden", margin:"10px", flex:"0 1 auto"}} key={user.name}>
+            <div style={{width:"100%", height:"30px", background:"#3371b8"}}></div>
+            <div style={{width:"100%", padding:"10px", background:"#eee"}}>
+              <p style={{fontSize:"18px", textAlign:"center", color:"black", marginBottom:0}}>{user.name}</p>
+              <p style={{fontSize:"10px", textAlign:"center", color:"#b3b3b3", marginBottom:0}}>{user.ip}</p>
+            </div>
+            <div style={{width:"100%", padding:"10px", background:"white"}}>
+              {Object.keys(user.channels).map(key => {
+                let channel = user.channels[key];
+                return <div className="channel" style={{display:"flex", flexDirection:"row", minHeight:"40px"}} key={key}>
+                  <div style={{display:"flex", flexDirection:"column", border:"2px solid #eee", borderRadius:"8px", fontSize:"10px", width:"20px", height:"50px", overflow:"hidden"}}>
+                    <div title="Mute" onClick={() => {channel.toggleMute(); this.forceUpdate();}} style={{display:"flex", justifyContent:"center", flexDirection:"column", textAlign:"center", flex:"1 1 auto", background:channel.localMute?"red":"white", color:channel.localMute?"white":"#4d4d4d"}}>M</div>
+                    <div title="Solo" style={{display:"flex", justifyContent:"center", flexDirection:"column", textAlign:"center", flex:"1 1 auto"}}>S</div>
+                  </div>
+                  <input type="range" min="0" max="1" step="0.01" value={channel.localVolume} onChange={(e) => {channel.setVolume(e.target.value); this.forceUpdate();}} style={{width:"50px", height:"50px", WebkitAppearance:"slider-vertical"}}></input>
+                  <div>
+                    <div>{channel.name}</div>
+                    <VolumeIndicator channel={channel} />
+                  </div>
+                </div>;
+              })}
+            </div>
+          </div>;
+
+          // Old
           return <UserPanel name={user.name} ip={user.ip} key={user.name}>
             {Object.keys(user.channels).map(key => {
               let channel = user.channels[key];

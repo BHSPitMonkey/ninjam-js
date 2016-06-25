@@ -118,14 +118,14 @@ body {
   margin-bottom: 0;
 }
 
-#jam > #users-channels .btn .progress {
-  width: 50px;
+#jam > #users-channels .progress {
+  width: 100px;
   margin-bottom: 0;
   height: 17px;
   transition:none;
 }
 
-#jam > #users-channels .btn .progress-bar {
+#jam > #users-channels .progress-bar {
   transition: none;
 }
 
